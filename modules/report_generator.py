@@ -10,59 +10,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Advanced imports for styling, charts, and graph label formatting
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 from openpyxl.chart import BarChart, Reference
 from openpyxl.formatting.rule import CellIsRule
 from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.drawing.line import LineProperties
 from openpyxl.chart.label import DataLabelList
-
-# Professional styling constants
-PROFESSIONAL_STYLES = {
-    'thin_border': Border(
-        left=Side(border_style='thin', color='000000'),
-        right=Side(border_style='thin', color='000000'),
-        top=Side(border_style='thin', color='000000'),
-        bottom=Side(border_style='thin', color='000000')
-    ),
-    'medium_border': Border(
-        left=Side(border_style='medium', color='000000'),
-        right=Side(border_style='medium', color='000000'),
-        top=Side(border_style='medium', color='000000'),
-        bottom=Side(border_style='medium', color='000000')
-    ),
-    'header_fill': PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid"),
-    'category_fill': PatternFill(start_color="E7E6E6", end_color="E7E6E6", fill_type="solid"),
-    'data_fill': PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid"),
-    'critical_fill': PatternFill(start_color="FFE6E6", end_color="FFE6E6", fill_type="solid"),
-    'header_font': Font(color="FFFFFF", bold=True, size=10),
-    'category_font': Font(color="000000", bold=True, size=10),
-    'data_font': Font(color="000000", size=9),
-    'center_align': Alignment(horizontal='center', vertical='center', wrap_text=True)
-}
-
-# Subject categorization for better organization
-SUBJECT_CATEGORIES = {
-    'CORE_SUBJECTS': ['COMPUTER', 'PROGRAMMING', 'DATA', 'SYSTEM', 'SOFTWARE'],
-    'MATHEMATICS': ['MATHEMATICS', 'STATISTICS', 'PROBABILITY', 'CALCULUS'],
-    'ENGINEERING': ['ENGINEERING', 'MECHANICS', 'PHYSICS', 'QUANTUM'],
-    'COMMUNICATION': ['COMMUNICATION', 'ENGLISH', 'TECHNICAL WRITING'],
-    'MANAGEMENT': ['MANAGEMENT', 'ECONOMICS', 'BUSINESS'],
-    'SCIENCE': ['ENVIRONMENTAL', 'CHEMISTRY', 'BIOLOGY'],
-    'RESEARCH': ['RESEARCH', 'INNOVATION', 'PROJECT']
-}
-
-def categorize_subject(subject_name):
-    """Categorize subjects based on name patterns"""
-    subject_upper = subject_name.upper()
-    
-    for category, keywords in SUBJECT_CATEGORIES.items():
-        for keyword in keywords:
-            if keyword in subject_upper:
-                return category.replace('_', ' & ')
-    
-    return 'OTHER SUBJECTS'
 
 def create_report_dataframe(erp_file, min_attendance_criteria, filename):
     """
@@ -110,7 +64,7 @@ def create_report_dataframe(erp_file, min_attendance_criteria, filename):
         logger.error(f"Could not find data table header. Searched for patterns: {header_patterns}")
         logger.error(f"First 10 lines of file: {lines[:10]}")
         raise ValueError("Could not find the data table header in the ERP file. Please check the file format.")
-    
+            
     # This logic now works correctly because 'lines' was parsed by the csv reader
     try:
         h1_subjects = [h.strip() for h in lines_as_lists[header_start_index]]
@@ -217,234 +171,125 @@ def create_report_dataframe(erp_file, min_attendance_criteria, filename):
 
 def create_excel_file(df, subject_details, metadata):
     """
-    Creates Excel report matching the exact ERP format from the uploaded image.
+    This is the definitive, most advanced version of the Excel file generator.
+    It takes full manual control to build the report for maximum stability and precision.
     """
-    # Initialize output_buffer to ensure it's always defined
+    df.rename(columns={'Roll No_duplicate': 'Roll No'}, inplace=True)
     output_buffer = BytesIO()
-    
-    try:
-        # Safely rename columns - work on a copy to avoid modifying original
-        df_copy = df.copy()
-        df_copy.rename(columns={'Roll No_duplicate': 'Roll No'}, inplace=True)
+    with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
+        sheet_name = metadata['monitoring_stage']
         
-        with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
-            sheet_name = metadata.get('monitoring_stage', 'Report')[:31]  # Excel sheet name limit
-            worksheet = writer.book.create_sheet(title=sheet_name)
+        worksheet = writer.book.create_sheet(title=sheet_name)
+        if 'Sheet' in writer.book.sheetnames:
+            writer.book.remove(writer.book['Sheet'])
+        
+        VIBRANT_YELLOW_FILL = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")
+        DARK_GREY_FILL = PatternFill(start_color="A9A9A9", end_color="A9A9A9", fill_type="solid")
+        WHITE_FONT = Font(color="FFFFFF", bold=True)
+        BLACK_FONT = Font(color="000000", bold=True)
+        CENTER_ALIGN = Alignment(horizontal='center', vertical='center')
+
+        last_col_letter = get_column_letter(df.shape[1])
+        cell_b2 = worksheet.cell(row=2, column=2); cell_b2.value = 'DEPARTMENT OF CST'; cell_b2.font = BLACK_FONT
+        worksheet.merge_cells(f'B2:{last_col_letter}2'); cell_b2.alignment = CENTER_ALIGN
+        
+        cell_b3 = worksheet.cell(row=3, column=2); cell_b3.value = 'LOW ATTENDANCE REVIEW REPORT (1 WEEK PRIOR TO LAST DAY OF CLASSES)'; cell_b3.font = BLACK_FONT
+        worksheet.merge_cells(f'B3:{last_col_letter}3'); cell_b3.alignment = CENTER_ALIGN
+        
+        worksheet['B4'] = 'Branch: MRU-School of Engineering'
+        worksheet['B5'] = 'Department: Bachelor of Technology in Computer Science and Engineering'
+        worksheet['B6'] = f"Class Name: {metadata['class_name']}"
+        worksheet['B7'] = f"Division: {metadata['division']}"
+        worksheet['B8'] = f"Date: {metadata['date_range']}"
+        worksheet['B9'] = f"Program Coordinator: {metadata['coordinator']}"
+        
+        headers1 = list(df.columns)
+        headers2 = [''] * 3 + [subject_details.get(subj, {}).get('code', '') for subj in subject_details.keys()] + [''] * 4
+        headers3 = [''] * 3 + [subject_details.get(subj, {}).get('type', '') for subj in subject_details.keys()] + [''] * 4
+        
+        try:
+            overall_percent_col_index = headers1.index('Overall %age of all subjects from ERP report') + 1
+        except ValueError:
+            overall_percent_col_index = df.shape[1] - 3
             
-            # Remove default sheet if it exists
-            if 'Sheet' in writer.book.sheetnames:
-                writer.book.remove(writer.book['Sheet'])
-            
-            # Create exact ERP format matching the uploaded image
-            _create_erp_format_report(worksheet, df_copy, subject_details, metadata)
+        for i, val in enumerate(headers1, 1):
+            cell = worksheet.cell(row=9, column=i, value=val); cell.font = BLACK_FONT
+            if i <= overall_percent_col_index: cell.fill = VIBRANT_YELLOW_FILL
         
-        logger.info(f"Excel file created successfully with {len(df_copy)} rows")
+        for i, val in enumerate(headers2, 1):
+            cell = worksheet.cell(row=10, column=i, value=val); cell.font = BLACK_FONT
+            if i <= overall_percent_col_index: cell.fill = VIBRANT_YELLOW_FILL
+
+        for i, val in enumerate(headers3, 1):
+            cell = worksheet.cell(row=11, column=i, value=val); cell.font = BLACK_FONT
+            if i <= overall_percent_col_index: cell.fill = VIBRANT_YELLOW_FILL
         
-    except Exception as e:
-        logger.error(f"Error creating Excel file: {e}")
-        # Re-raise to let caller handle the error
-        raise e
-    
-    finally:
-        # Always ensure buffer is at the beginning, regardless of success or failure
-        output_buffer.seek(0)
-    
+        for r_idx, row_data in enumerate(df.values.tolist(), 12):
+            for c_idx, value in enumerate(row_data, 1):
+                cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
+                if c_idx <= (df.shape[1] - 3):
+                    cell.fill = VIBRANT_YELLOW_FILL
+
+        min_attendance = metadata['min_attendance']
+        dark_grey_rule = CellIsRule(operator='lessThan', formula=[min_attendance], stopIfTrue=True, fill=DARK_GREY_FILL, font=WHITE_FONT)
+        data_range = f"D12:{get_column_letter(3 + len(subject_details))}{len(df)+11}"
+        worksheet.conditional_formatting.add(data_range, dark_grey_rule)
+        
+        summary_start_row = len(df) + 15
+        subjects = list(subject_details.keys())
+        thresholds = [75, 70, 65, 60]
+        
+        # Only create summary for subjects that exist in the DataFrame
+        valid_subjects = [s for s in subjects if s in df.columns]
+        logger.info(f"Creating summary for {len(valid_subjects)} valid subjects: {valid_subjects}")
+        
+        cell = worksheet.cell(row=summary_start_row, column=1, value="Number of Students in course")
+        cell.font = BLACK_FONT
+        
+        # Build summary statistics safely
+        for i, subject in enumerate(valid_subjects, 4):
+            try:
+                count = (df[subject] > 0).sum() if subject in df.columns else 0
+                worksheet.cell(row=summary_start_row, column=i, value=count)
+            except Exception as e:
+                logger.error(f"Error calculating student count for {subject}: {e}")
+                worksheet.cell(row=summary_start_row, column=i, value=0)
+        
+        for i, th in enumerate(thresholds, 1):
+            cell = worksheet.cell(row=summary_start_row + i, column=1, value=f"Number of students below {th}%")
+            cell.font = BLACK_FONT
+            for j, subject in enumerate(valid_subjects, 4):
+                try:
+                    count = (df[subject] < th).sum() if subject in df.columns else 0
+                    worksheet.cell(row=summary_start_row + i, column=j, value=count)
+                except Exception as e:
+                    logger.error(f"Error calculating threshold count for {subject} at {th}%: {e}")
+                    worksheet.cell(row=summary_start_row + i, column=j, value=0)
+        
+        footer_start_row = summary_start_row + 10
+        cell = worksheet.cell(row=footer_start_row, column=15, value="Signature of Mentor"); cell.font = BLACK_FONT
+
+        chart = BarChart()
+        chart.title = "Count of Students Below Minimum Attendance Criteria"
+        chart.y_axis.title = 'Count of Students'
+        chart.x_axis.title = 'Subjects'
+        chart.height = 18; chart.width = 40  
+        data_row = summary_start_row + thresholds.index(75) + 1
+        data = Reference(worksheet, min_col=4, min_row=data_row, max_col=3 + len(subjects), max_row=data_row)
+        cats = Reference(worksheet, min_col=4, min_row=9, max_col=3 + len(subjects), max_row=9)
+        chart.add_data(data, from_rows=True, titles_from_data=False)
+        chart.set_categories(cats)
+        chart.legend = None
+        series = chart.series[0]
+        series.graphicalProperties = GraphicalProperties(solidFill="FFC000", ln=LineProperties(solidFill="000000"))
+        chart.data_labels = DataLabelList(showVal=True)
+        chart_anchor = f"A{summary_start_row + len(thresholds) + 5}"
+        worksheet.add_chart(chart, chart_anchor)
+        
+        for col in worksheet.columns:
+            if any(c.value for c in col):
+                length = max(len(str(c.value)) for c in col if c.value)
+                worksheet.column_dimensions[get_column_letter(col[0].column)].width = length + 2
+
+    output_buffer.seek(0)
     return output_buffer
-
-def _create_erp_format_report(worksheet, df, subject_details, metadata):
-    """Create exact ERP format matching the uploaded image"""
-    try:
-        # Define exact colors and styles from the image
-        YELLOW_FILL = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-        RED_FILL = PatternFill(start_color="FF9999", end_color="FF9999", fill_type="solid")
-        
-        THIN_BORDER = Border(
-            left=Side(border_style='thin', color='000000'),
-            right=Side(border_style='thin', color='000000'),
-            top=Side(border_style='thin', color='000000'),
-            bottom=Side(border_style='thin', color='000000')
-        )
-        
-        BLACK_FONT = Font(color="000000", size=9, bold=False)
-        BOLD_FONT = Font(color="000000", size=9, bold=True)
-        CENTER_ALIGN = Alignment(horizontal='center', vertical='center', wrap_text=True)
-        
-        # Header section (rows 1-10)
-        _create_erp_header_section(worksheet, metadata, YELLOW_FILL, RED_FILL, BLACK_FONT, BOLD_FONT, CENTER_ALIGN, THIN_BORDER)
-        
-        # Data headers (rows 11-15)
-        header_start_row = 11
-        data_start_row = _create_erp_data_headers(worksheet, df, subject_details, header_start_row, YELLOW_FILL, BLACK_FONT, BOLD_FONT, CENTER_ALIGN, THIN_BORDER)
-        
-        # Data rows
-        _add_erp_data_rows(worksheet, df, data_start_row, YELLOW_FILL, BLACK_FONT, CENTER_ALIGN, THIN_BORDER)
-        
-        # Set column widths
-        _set_erp_column_widths(worksheet)
-        
-        logger.info("ERP format report created successfully")
-        
-    except Exception as e:
-        logger.error(f"Error in _create_erp_format_report: {e}")
-        raise
-
-def _create_erp_header_section(worksheet, metadata, yellow_fill, red_fill, black_font, bold_font, center_align, thin_border):
-    """Create the header section matching the ERP format"""
-    
-    # Row 1: Branch
-    cell = worksheet.cell(row=1, column=1, value="Branch: MRU-School of Engineering")
-    cell.font = bold_font
-    cell.fill = yellow_fill
-    cell.border = thin_border
-    worksheet.merge_cells('A1:AK1')
-    
-    # Row 2: Department
-    cell = worksheet.cell(row=2, column=1, value="Department: Bachelor of Technology in Computer Science and Engineering")
-    cell.font = bold_font
-    cell.fill = yellow_fill
-    cell.border = thin_border
-    worksheet.merge_cells('A2:AK2')
-    
-    # Row 3: Class Name
-    cell = worksheet.cell(row=3, column=1, value=f"Class Name: {metadata['class_name']}")
-    cell.font = bold_font
-    cell.fill = yellow_fill
-    cell.border = thin_border
-    worksheet.merge_cells('A3:T3')
-    
-    # Row 4: Division
-    cell = worksheet.cell(row=4, column=1, value=f"Division: {metadata['division']}")
-    cell.font = bold_font
-    cell.fill = yellow_fill
-    cell.border = thin_border
-    worksheet.merge_cells('A4:T4')
-    
-    # Row 5: Date
-    cell = worksheet.cell(row=5, column=1, value=f"Date: {metadata['date_range']}")
-    cell.font = bold_font
-    cell.fill = yellow_fill
-    cell.border = thin_border
-    worksheet.merge_cells('A5:T5')
-    
-    # Row 6: Program Coordinator
-    cell = worksheet.cell(row=6, column=1, value=f"Program Coordinator: {metadata['coordinator']}")
-    cell.font = bold_font
-    cell.fill = yellow_fill
-    cell.border = thin_border
-    worksheet.merge_cells('A6:T6')
-    
-    # Red box for "Please update the Minimum Attendance Criteria"
-    cell = worksheet.cell(row=3, column=21, value="Please update the Minimum Attendance Criteria (Engineering, Management & Applied Sciences)(75%), Law (70%), Education (60%)")
-    cell.font = black_font
-    cell.fill = red_fill
-    cell.border = thin_border
-    cell.alignment = center_align
-    worksheet.merge_cells('U3:AK6')
-
-def _create_erp_data_headers(worksheet, df, subject_details, start_row, yellow_fill, black_font, bold_font, center_align, thin_border):
-    """Create multi-level data headers matching ERP format"""
-    
-    # Row 11: Subject names (Level 1)
-    basic_headers = ['Sr No.', 'Roll No', 'Student Name', 'Faculty Member Name']
-    current_col = 1
-    
-    # Basic columns
-    for header in basic_headers:
-        cell = worksheet.cell(row=start_row, column=current_col, value=header)
-        cell.font = bold_font
-        cell.fill = yellow_fill
-        cell.border = thin_border
-        cell.alignment = center_align
-        current_col += 1
-    
-    # Subject columns - create proper multi-level structure
-    subjects = list(subject_details.keys())
-    
-    for subject in subjects:
-        if subject in df.columns:
-            # Subject name
-            cell = worksheet.cell(row=start_row, column=current_col, value=subject[:20])  # Truncate long names
-            cell.font = bold_font
-            cell.fill = yellow_fill
-            cell.border = thin_border
-            cell.alignment = center_align
-            
-            # Subject code (Row 12)
-            code = subject_details.get(subject, {}).get('code', '')
-            cell = worksheet.cell(row=start_row + 1, column=current_col, value=code)
-            cell.font = black_font
-            cell.fill = yellow_fill
-            cell.border = thin_border
-            cell.alignment = center_align
-            
-            # Subject type (Row 13)
-            subject_type = subject_details.get(subject, {}).get('type', '')
-            cell = worksheet.cell(row=start_row + 2, column=current_col, value=subject_type)
-            cell.font = black_font
-            cell.fill = yellow_fill
-            cell.border = thin_border
-            cell.alignment = center_align
-            
-            current_col += 1
-    
-    # Summary columns
-    summary_headers = ['Overall %age of all subjects from ERP report', 'Count of Courses with attendance below minimum', 'Whether Critical']
-    for header in summary_headers:
-        if header in df.columns or any(h in df.columns for h in summary_headers):
-            cell = worksheet.cell(row=start_row, column=current_col, value=header)
-            cell.font = bold_font
-            cell.fill = yellow_fill
-            cell.border = thin_border
-            cell.alignment = center_align
-            
-            # Empty cells for rows 12-13
-            for row_offset in [1, 2]:
-                cell = worksheet.cell(row=start_row + row_offset, column=current_col, value="")
-                cell.fill = yellow_fill
-                cell.border = thin_border
-            
-            current_col += 1
-    
-    return start_row + 3
-
-def _add_erp_data_rows(worksheet, df, start_row, yellow_fill, black_font, center_align, thin_border):
-    """Add data rows with yellow background matching ERP format"""
-    
-    for row_idx, row_data in enumerate(df.values.tolist()):
-        excel_row = start_row + row_idx
-        
-        for col_idx, value in enumerate(row_data):
-            excel_col = col_idx + 1
-            cell = worksheet.cell(row=excel_row, column=excel_col, value=value)
-            
-            # Apply yellow background to all data cells (matching the image)
-            cell.fill = yellow_fill
-            cell.font = black_font
-            cell.border = thin_border
-            cell.alignment = center_align
-            
-            # Special formatting for critical students
-            if col_idx < 4:  # Basic info columns
-                cell.alignment = Alignment(horizontal='left', vertical='center')
-
-def _set_erp_column_widths(worksheet):
-    """Set column widths matching ERP format"""
-    # Set specific widths for different column types
-    widths = {
-        'A': 8,   # Sr No
-        'B': 12,  # Roll No
-        'C': 20,  # Student Name
-        'D': 15,  # Faculty Member Name
-    }
-    
-    # Apply basic column widths
-    for col, width in widths.items():
-        worksheet.column_dimensions[col].width = width
-    
-    # Set subject column widths
-    for col_num in range(5, 30):  # Subject columns
-        col_letter = get_column_letter(col_num)
-        worksheet.column_dimensions[col_letter].width = 12
-
-# Old helper functions removed - using new ERP format functions instead
-
