@@ -64,7 +64,7 @@ def create_report_dataframe(erp_file, min_attendance_criteria, filename):
         logger.error(f"Could not find data table header. Searched for patterns: {header_patterns}")
         logger.error(f"First 10 lines of file: {lines[:10]}")
         raise ValueError("Could not find the data table header in the ERP file. Please check the file format.")
-            
+    
     # This logic now works correctly because 'lines' was parsed by the csv reader
     try:
         h1_subjects = [h.strip() for h in lines_as_lists[header_start_index]]
@@ -131,9 +131,6 @@ def create_report_dataframe(erp_file, min_attendance_criteria, filename):
         else:
             logger.warning(f"No matching column found for subject: {subject}")
             logger.warning(f"Looked for: {[f'{subject}{s}' for s in possible_suffixes]}")
-            # For missing subjects, add them with 0 values so they still appear in the report
-            output_df[subject] = 0
-            logger.info(f"Added {subject} with default 0 values")
     
     # Only process subjects that have matching columns
     for subject, col_name in subject_percent_cols.items():
@@ -183,7 +180,7 @@ def create_excel_file(df, subject_details, metadata):
         if 'Sheet' in writer.book.sheetnames:
             writer.book.remove(writer.book['Sheet'])
         
-        VIBRANT_YELLOW_FILL = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")
+        VIBRANT_YELLOW_FILL = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
         DARK_GREY_FILL = PatternFill(start_color="A9A9A9", end_color="A9A9A9", fill_type="solid")
         WHITE_FONT = Font(color="FFFFFF", bold=True)
         BLACK_FONT = Font(color="000000", bold=True)
@@ -204,14 +201,20 @@ def create_excel_file(df, subject_details, metadata):
         worksheet['B9'] = f"Program Coordinator: {metadata['coordinator']}"
         
         headers1 = list(df.columns)
-        headers2 = [''] * 3 + [subject_details.get(subj, {}).get('code', '') for subj in subject_details.keys()] + [''] * 4
-        headers3 = [''] * 3 + [subject_details.get(subj, {}).get('type', '') for subj in subject_details.keys()] + [''] * 4
         
+        # Safely build headers with error handling
+        try:
+            headers2 = [''] * 3 + [subject_details.get(subj, {}).get('code', '') for subj in subject_details.keys()] + [''] * 4
+            headers3 = [''] * 3 + [subject_details.get(subj, {}).get('type', '') for subj in subject_details.keys()] + [''] * 4
+        except Exception as e:
+            logger.error(f"Error building Excel headers: {e}")
+            # Fallback to simple headers
+            headers2 = [''] * len(headers1)
+            headers3 = [''] * len(headers1)
         try:
             overall_percent_col_index = headers1.index('Overall %age of all subjects from ERP report') + 1
         except ValueError:
             overall_percent_col_index = df.shape[1] - 3
-            
         for i, val in enumerate(headers1, 1):
             cell = worksheet.cell(row=9, column=i, value=val); cell.font = BLACK_FONT
             if i <= overall_percent_col_index: cell.fill = VIBRANT_YELLOW_FILL
@@ -281,7 +284,7 @@ def create_excel_file(df, subject_details, metadata):
         chart.set_categories(cats)
         chart.legend = None
         series = chart.series[0]
-        series.graphicalProperties = GraphicalProperties(solidFill="FFC000", ln=LineProperties(solidFill="000000"))
+        series.graphicalProperties = GraphicalProperties(solidFill="FFFF00", ln=LineProperties(solidFill="000000"))
         chart.data_labels = DataLabelList(showVal=True)
         chart_anchor = f"A{summary_start_row + len(thresholds) + 5}"
         worksheet.add_chart(chart, chart_anchor)
@@ -293,3 +296,4 @@ def create_excel_file(df, subject_details, metadata):
 
     output_buffer.seek(0)
     return output_buffer
+
