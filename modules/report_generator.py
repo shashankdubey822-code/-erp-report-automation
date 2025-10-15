@@ -10,13 +10,59 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Advanced imports for styling, charts, and graph label formatting
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.chart import BarChart, Reference
 from openpyxl.formatting.rule import CellIsRule
 from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.drawing.line import LineProperties
 from openpyxl.chart.label import DataLabelList
+
+# Professional styling constants
+PROFESSIONAL_STYLES = {
+    'thin_border': Border(
+        left=Side(border_style='thin', color='000000'),
+        right=Side(border_style='thin', color='000000'),
+        top=Side(border_style='thin', color='000000'),
+        bottom=Side(border_style='thin', color='000000')
+    ),
+    'medium_border': Border(
+        left=Side(border_style='medium', color='000000'),
+        right=Side(border_style='medium', color='000000'),
+        top=Side(border_style='medium', color='000000'),
+        bottom=Side(border_style='medium', color='000000')
+    ),
+    'header_fill': PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid"),
+    'category_fill': PatternFill(start_color="E7E6E6", end_color="E7E6E6", fill_type="solid"),
+    'data_fill': PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid"),
+    'critical_fill': PatternFill(start_color="FFE6E6", end_color="FFE6E6", fill_type="solid"),
+    'header_font': Font(color="FFFFFF", bold=True, size=10),
+    'category_font': Font(color="000000", bold=True, size=10),
+    'data_font': Font(color="000000", size=9),
+    'center_align': Alignment(horizontal='center', vertical='center', wrap_text=True)
+}
+
+# Subject categorization for better organization
+SUBJECT_CATEGORIES = {
+    'CORE_SUBJECTS': ['COMPUTER', 'PROGRAMMING', 'DATA', 'SYSTEM', 'SOFTWARE'],
+    'MATHEMATICS': ['MATHEMATICS', 'STATISTICS', 'PROBABILITY', 'CALCULUS'],
+    'ENGINEERING': ['ENGINEERING', 'MECHANICS', 'PHYSICS', 'QUANTUM'],
+    'COMMUNICATION': ['COMMUNICATION', 'ENGLISH', 'TECHNICAL WRITING'],
+    'MANAGEMENT': ['MANAGEMENT', 'ECONOMICS', 'BUSINESS'],
+    'SCIENCE': ['ENVIRONMENTAL', 'CHEMISTRY', 'BIOLOGY'],
+    'RESEARCH': ['RESEARCH', 'INNOVATION', 'PROJECT']
+}
+
+def categorize_subject(subject_name):
+    """Categorize subjects based on name patterns"""
+    subject_upper = subject_name.upper()
+    
+    for category, keywords in SUBJECT_CATEGORIES.items():
+        for keyword in keywords:
+            if keyword in subject_upper:
+                return category.replace('_', ' & ')
+    
+    return 'OTHER SUBJECTS'
 
 def create_report_dataframe(erp_file, min_attendance_criteria, filename):
     """
@@ -168,132 +214,228 @@ def create_report_dataframe(erp_file, min_attendance_criteria, filename):
 
 def create_excel_file(df, subject_details, metadata):
     """
-    This is the definitive, most advanced version of the Excel file generator.
-    It takes full manual control to build the report for maximum stability and precision.
+    Professional Excel report generator with multi-level headers, borders, and styling like Image 2.
     """
     df.rename(columns={'Roll No_duplicate': 'Roll No'}, inplace=True)
     output_buffer = BytesIO()
+    
     with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
         sheet_name = metadata['monitoring_stage']
-        
         worksheet = writer.book.create_sheet(title=sheet_name)
         if 'Sheet' in writer.book.sheetnames:
             writer.book.remove(writer.book['Sheet'])
         
-        VIBRANT_YELLOW_FILL = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-        DARK_GREY_FILL = PatternFill(start_color="A9A9A9", end_color="A9A9A9", fill_type="solid")
-        WHITE_FONT = Font(color="FFFFFF", bold=True)
-        BLACK_FONT = Font(color="000000", bold=True)
-        CENTER_ALIGN = Alignment(horizontal='center', vertical='center')
+        # Get styles
+        styles = PROFESSIONAL_STYLES
+        
+        # Create header section with professional styling
+        _create_professional_header(worksheet, metadata, df.shape[1])
+        
+        # Create multi-level data headers with categories
+        header_start_row = 11
+        data_start_row = _create_multi_level_headers(worksheet, df, subject_details, header_start_row, styles)
+        
+        # Add data with borders and styling
+        _add_data_with_styling(worksheet, df, data_start_row, styles)
+        
+        # Add professional summary section
+        _create_professional_summary(worksheet, df, subject_details, len(df) + data_start_row + 2, styles)
+        
+        # Apply column widths
+        _apply_column_widths(worksheet)
+        
+        # Add conditional formatting for critical attendance
+        _apply_conditional_formatting(worksheet, df, subject_details, data_start_row, metadata['min_attendance'])
 
-        last_col_letter = get_column_letter(df.shape[1])
-        cell_b2 = worksheet.cell(row=2, column=2); cell_b2.value = 'DEPARTMENT OF CST'; cell_b2.font = BLACK_FONT
-        worksheet.merge_cells(f'B2:{last_col_letter}2'); cell_b2.alignment = CENTER_ALIGN
-        
-        cell_b3 = worksheet.cell(row=3, column=2); cell_b3.value = 'LOW ATTENDANCE REVIEW REPORT (1 WEEK PRIOR TO LAST DAY OF CLASSES)'; cell_b3.font = BLACK_FONT
-        worksheet.merge_cells(f'B3:{last_col_letter}3'); cell_b3.alignment = CENTER_ALIGN
-        
-        worksheet['B4'] = 'Branch: MRU-School of Engineering'
-        worksheet['B5'] = 'Department: Bachelor of Technology in Computer Science and Engineering'
-        worksheet['B6'] = f"Class Name: {metadata['class_name']}"
-        worksheet['B7'] = f"Division: {metadata['division']}"
-        worksheet['B8'] = f"Date: {metadata['date_range']}"
-        worksheet['B9'] = f"Program Coordinator: {metadata['coordinator']}"
-        
-        headers1 = list(df.columns)
-        
-        # Safely build headers with error handling
-        try:
-            headers2 = [''] * 3 + [subject_details.get(subj, {}).get('code', '') for subj in subject_details.keys()] + [''] * 4
-            headers3 = [''] * 3 + [subject_details.get(subj, {}).get('type', '') for subj in subject_details.keys()] + [''] * 4
-        except Exception as e:
-            logger.error(f"Error building Excel headers: {e}")
-            # Fallback to simple headers
-            headers2 = [''] * len(headers1)
-            headers3 = [''] * len(headers1)
-        try:
-            overall_percent_col_index = headers1.index('Overall %age of all subjects from ERP report') + 1
-        except ValueError:
-            overall_percent_col_index = df.shape[1] - 3
-        for i, val in enumerate(headers1, 1):
-            cell = worksheet.cell(row=9, column=i, value=val); cell.font = BLACK_FONT
-            if i <= overall_percent_col_index: cell.fill = VIBRANT_YELLOW_FILL
-        
-        for i, val in enumerate(headers2, 1):
-            cell = worksheet.cell(row=10, column=i, value=val); cell.font = BLACK_FONT
-            if i <= overall_percent_col_index: cell.fill = VIBRANT_YELLOW_FILL
+    output_buffer.seek(0)
+    return output_buffer
 
-        for i, val in enumerate(headers3, 1):
-            cell = worksheet.cell(row=11, column=i, value=val); cell.font = BLACK_FONT
-            if i <= overall_percent_col_index: cell.fill = VIBRANT_YELLOW_FILL
-        
-        for r_idx, row_data in enumerate(df.values.tolist(), 12):
-            for c_idx, value in enumerate(row_data, 1):
-                cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
-                if c_idx <= (df.shape[1] - 3):
-                    cell.fill = VIBRANT_YELLOW_FILL
+def _create_professional_header(worksheet, metadata, total_cols):
+    """Create professional header section like Image 2"""
+    styles = PROFESSIONAL_STYLES
+    last_col = get_column_letter(total_cols)
+    
+    # Main title
+    cell = worksheet.cell(row=1, column=1, value='DEPARTMENT OF CST')
+    cell.font = Font(bold=True, size=14)
+    cell.alignment = styles['center_align']
+    worksheet.merge_cells(f'A1:{last_col}1')
+    
+    # Subtitle
+    cell = worksheet.cell(row=2, column=1, value='LOW ATTENDANCE REVIEW REPORT (1 WEEK PRIOR TO LAST DAY OF CLASSES)')
+    cell.font = Font(bold=True, size=12)
+    cell.alignment = styles['center_align']
+    worksheet.merge_cells(f'A2:{last_col}2')
+    
+    # Details section
+    details = [
+        f"Branch: MRU-School of Engineering",
+        f"Department: Bachelor of Technology in Computer Science and Engineering",
+        f"Class Name: {metadata['class_name']}",
+        f"Division: {metadata['division']}",
+        f"Date: {metadata['date_range']}",
+        f"Program Coordinator: {metadata['coordinator']}"
+    ]
+    
+    for i, detail in enumerate(details, 3):
+        cell = worksheet.cell(row=i, column=1, value=detail)
+        cell.font = Font(bold=True, size=10)
+        worksheet.merge_cells(f'A{i}:{last_col}{i}')
 
-        min_attendance = metadata['min_attendance']
-        dark_grey_rule = CellIsRule(operator='lessThan', formula=[min_attendance], stopIfTrue=True, fill=DARK_GREY_FILL, font=WHITE_FONT)
-        data_range = f"D12:{get_column_letter(3 + len(subject_details))}{len(df)+11}"
-        worksheet.conditional_formatting.add(data_range, dark_grey_rule)
+def _create_multi_level_headers(worksheet, df, subject_details, start_row, styles):
+    """Create multi-level headers with subject categories"""
+    # Categorize subjects
+    subject_categories = {}
+    basic_cols = ['Sr No.', 'Roll No', 'Student Name']
+    
+    for subject in subject_details.keys():
+        category = categorize_subject(subject)
+        if category not in subject_categories:
+            subject_categories[category] = []
+        subject_categories[category].append(subject)
+    
+    # Create category headers (Level 1)
+    current_col = 1
+    
+    # Basic columns
+    for col_name in basic_cols:
+        cell = worksheet.cell(row=start_row, column=current_col, value=col_name)
+        cell.font = styles['header_font']
+        cell.fill = styles['header_fill']
+        cell.alignment = styles['center_align']
+        cell.border = styles['medium_border']
+        worksheet.merge_cells(f'{get_column_letter(current_col)}{start_row}:{get_column_letter(current_col)}{start_row + 1}')
+        current_col += 1
+    
+    # Subject categories
+    for category, subjects in subject_categories.items():
+        if subjects:  # Only if subjects exist in the dataframe
+            valid_subjects = [s for s in subjects if s in df.columns]
+            if valid_subjects:
+                # Category header
+                start_col = current_col
+                end_col = current_col + len(valid_subjects) - 1
+                
+                cell = worksheet.cell(row=start_row, column=start_col, value=category)
+                cell.font = styles['category_font']
+                cell.fill = styles['category_fill']
+                cell.alignment = styles['center_align']
+                cell.border = styles['medium_border']
+                
+                if end_col > start_col:
+                    worksheet.merge_cells(f'{get_column_letter(start_col)}{start_row}:{get_column_letter(end_col)}{start_row}')
+                
+                # Subject headers (Level 2)
+                for subject in valid_subjects:
+                    cell = worksheet.cell(row=start_row + 1, column=current_col, value=subject)
+                    cell.font = styles['header_font']
+                    cell.fill = styles['header_fill']
+                    cell.alignment = styles['center_align']
+                    cell.border = styles['thin_border']
+                    current_col += 1
+    
+    # Add summary columns
+    summary_cols = ['Overall %age of all subjects from ERP report', 'Count of Courses with attendance below minimum attendance criteria', 'Whether Critical']
+    for col_name in summary_cols:
+        if col_name in df.columns:
+            cell = worksheet.cell(row=start_row, column=current_col, value=col_name)
+            cell.font = styles['header_font']
+            cell.fill = styles['header_fill']
+            cell.alignment = styles['center_align']
+            cell.border = styles['medium_border']
+            worksheet.merge_cells(f'{get_column_letter(current_col)}{start_row}:{get_column_letter(current_col)}{start_row + 1}')
+            current_col += 1
+    
+    return start_row + 2
+
+def _add_data_with_styling(worksheet, df, start_row, styles):
+    """Add data with professional styling and borders"""
+    for row_idx, row_data in enumerate(df.values.tolist()):
+        excel_row = start_row + row_idx
+        for col_idx, value in enumerate(row_data):
+            excel_col = col_idx + 1
+            cell = worksheet.cell(row=excel_row, column=excel_col, value=value)
+            
+            # Apply styling
+            cell.font = styles['data_font']
+            cell.fill = styles['data_fill']
+            cell.border = styles['thin_border']
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            
+            # Special styling for critical rows
+            if 'Whether Critical' in df.columns and row_data[df.columns.get_loc('Whether Critical')] == 'CRITICAL':
+                if col_idx >= 3:  # Subject columns
+                    cell.fill = styles['critical_fill']
+
+def _create_professional_summary(worksheet, df, subject_details, start_row, styles):
+    """Create professional summary section"""
+    valid_subjects = [s for s in subject_details.keys() if s in df.columns]
+    thresholds = [75, 70, 65, 60]
+    
+    # Summary title
+    cell = worksheet.cell(row=start_row, column=1, value="ATTENDANCE SUMMARY")
+    cell.font = Font(bold=True, size=12)
+    cell.border = styles['medium_border']
+    
+    start_row += 2
+    
+    # Headers
+    cell = worksheet.cell(row=start_row, column=1, value="Metrics")
+    cell.font = styles['header_font']
+    cell.fill = styles['header_fill']
+    cell.border = styles['medium_border']
+    
+    for i, subject in enumerate(valid_subjects[:10], 2):  # Limit to avoid overflow
+        cell = worksheet.cell(row=start_row, column=i, value=subject[:15] + '...' if len(subject) > 15 else subject)
+        cell.font = styles['header_font']
+        cell.fill = styles['header_fill']
+        cell.border = styles['thin_border']
+        cell.alignment = styles['center_align']
+    
+    # Summary data
+    metrics = [("Students in course", lambda s: (df[s] > 0).sum())] + \
+              [(f"Students below {th}%", lambda s, t=th: (df[s] < t).sum()) for th in thresholds]
+    
+    for row_offset, (metric_name, calc_func) in enumerate(metrics, 1):
+        excel_row = start_row + row_offset
         
-        summary_start_row = len(df) + 15
-        subjects = list(subject_details.keys())
-        thresholds = [75, 70, 65, 60]
+        cell = worksheet.cell(row=excel_row, column=1, value=metric_name)
+        cell.font = styles['data_font']
+        cell.border = styles['thin_border']
         
-        # Only create summary for subjects that exist in the DataFrame
-        valid_subjects = [s for s in subjects if s in df.columns]
-        logger.info(f"Creating summary for {len(valid_subjects)} valid subjects: {valid_subjects}")
-        
-        cell = worksheet.cell(row=summary_start_row, column=1, value="Number of Students in course")
-        cell.font = BLACK_FONT
-        
-        # Build summary statistics safely
-        for i, subject in enumerate(valid_subjects, 4):
+        for col_offset, subject in enumerate(valid_subjects[:10], 2):
             try:
-                count = (df[subject] > 0).sum() if subject in df.columns else 0
-                worksheet.cell(row=summary_start_row, column=i, value=count)
+                value = calc_func(subject) if subject in df.columns else 0
+                cell = worksheet.cell(row=excel_row, column=col_offset, value=value)
+                cell.font = styles['data_font']
+                cell.border = styles['thin_border']
+                cell.alignment = styles['center_align']
             except Exception as e:
-                logger.error(f"Error calculating student count for {subject}: {e}")
-                worksheet.cell(row=summary_start_row, column=i, value=0)
-        
-        for i, th in enumerate(thresholds, 1):
-            cell = worksheet.cell(row=summary_start_row + i, column=1, value=f"Number of students below {th}%")
-            cell.font = BLACK_FONT
-            for j, subject in enumerate(valid_subjects, 4):
-                try:
-                    count = (df[subject] < th).sum() if subject in df.columns else 0
-                    worksheet.cell(row=summary_start_row + i, column=j, value=count)
-                except Exception as e:
-                    logger.error(f"Error calculating threshold count for {subject} at {th}%: {e}")
-                    worksheet.cell(row=summary_start_row + i, column=j, value=0)
-        
-        footer_start_row = summary_start_row + 10
-        cell = worksheet.cell(row=footer_start_row, column=15, value="Signature of Mentor"); cell.font = BLACK_FONT
+                logger.error(f"Error calculating summary for {subject}: {e}")
 
-        chart = BarChart()
-        chart.title = "Count of Students Below Minimum Attendance Criteria"
-        chart.y_axis.title = 'Count of Students'
-        chart.x_axis.title = 'Subjects'
-        chart.height = 18; chart.width = 40  
-        data_row = summary_start_row + thresholds.index(75) + 1
-        data = Reference(worksheet, min_col=4, min_row=data_row, max_col=3 + len(subjects), max_row=data_row)
-        cats = Reference(worksheet, min_col=4, min_row=9, max_col=3 + len(subjects), max_row=9)
-        chart.add_data(data, from_rows=True, titles_from_data=False)
-        chart.set_categories(cats)
-        chart.legend = None
-        series = chart.series[0]
-        series.graphicalProperties = GraphicalProperties(solidFill="FFFF00", ln=LineProperties(solidFill="000000"))
-        chart.data_labels = DataLabelList(showVal=True)
-        chart_anchor = f"A{summary_start_row + len(thresholds) + 5}"
-        worksheet.add_chart(chart, chart_anchor)
-        
-        for col in worksheet.columns:
-            if any(c.value for c in col):
-                length = max(len(str(c.value)) for c in col if c.value)
-                worksheet.column_dimensions[get_column_letter(col[0].column)].width = length + 2
+def _apply_column_widths(worksheet):
+    """Apply professional column widths"""
+    for column_cells in worksheet.columns:
+        length = max(len(str(cell.value or '')) for cell in column_cells)
+        worksheet.column_dimensions[get_column_letter(column_cells[0].column)].width = min(max(length + 2, 10), 25)
 
+def _apply_conditional_formatting(worksheet, df, subject_details, data_start_row, min_attendance):
+    """Apply conditional formatting for low attendance"""
+    styles = PROFESSIONAL_STYLES
+    
+    # Find subject columns
+    subject_cols = []
+    for col_idx, col_name in enumerate(df.columns):
+        if col_name in subject_details:
+            subject_cols.append(get_column_letter(col_idx + 1))
+    
+    if subject_cols:
+        for col_letter in subject_cols:
+            range_str = f"{col_letter}{data_start_row}:{col_letter}{data_start_row + len(df) - 1}"
+            rule = CellIsRule(operator='lessThan', formula=[min_attendance], 
+                            stopIfTrue=True, 
+                            fill=PatternFill(start_color="FFB3B3", end_color="FFB3B3", fill_type="solid"))
+            worksheet.conditional_formatting.add(range_str, rule)
     output_buffer.seek(0)
     return output_buffer
 
