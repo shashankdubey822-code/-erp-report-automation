@@ -1,0 +1,212 @@
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.welcome-header {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.welcome-header h1, .welcome-header p {
+    opacity: 0; /* Start hidden */
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.8s ease forwards;
+}
+
+.welcome-header p {
+    animation-delay: 0.2s; /* Stagger the animation */
+    font-style: italic;
+    color: #606770;
+}
+
+.upload-btn {
+    background-color: #42b72a;
+}
+.upload-btn:hover {
+    background-color: #36a420;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 20px;
+    color: #1877f2;
+    text-decoration: none;
+}
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.container-wide {
+    max-width: 95%;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 90%;
+    text-align: center;
+}
+
+h1 {
+    color: #1c1e21;
+    margin-bottom: 10px;
+}
+
+p {
+    color: #606770;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #4b4f56;
+}
+
+input[type="file"], input[type="number"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+input[type="file"] {
+    padding: 9px;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    background-color: #1877f2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #166fe5;
+}
+
+.flash-message {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #a94442;
+    background-color: #f2dede;
+    border-color: #ebccd1;
+}
+.preview-section {
+    margin-top: 40px;
+    text-align: left;
+    border-top: 1px solid #dddfe2;
+    padding-top: 20px;
+}
+
+.preview-section h2 {
+    text-align: center;
+    color: #1c1e21;
+}
+
+.download-btn {
+    background-color: #42b72a;
+}
+
+.download-btn:hover {
+    background-color: #36a420;
+}
+
+.table-container {
+    overflow-x: auto; /* Allows horizontal scrolling for wide tables */
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.preview-table th, .preview-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.preview-table th {
+    background-color: #f0f2f5;
+    font-weight: bold;
+}
+
+.preview-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px; /* Adds space between buttons */
+}
+
+.preview-btn {
+    background-color: #1877f2;
+}
+.preview-btn:hover {
+    background-color: #166fe5;
+}
+
+/* Add this to the bottom of static/style.css */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    box-sizing: border-box;
+    background-color: white;
+}
+

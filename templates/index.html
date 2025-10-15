@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP Report Automator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-header">
+            <h1 id="greeting">Welcome!</h1>
+            <p id="quote">Loading a quote for you...</p>
+        </div>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for message in messages %}
+                        <div class="flash-message error">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form action="/upload" method="post" enctype="multipart/form-data">
+             <h3>Start Here</h3>
+             <div class="form-group">
+                <label for="erp_file">Upload Your Raw ERP Data File (.csv)</label>
+                <input type="file" id="erp_file" name="erp_file" accept=".csv" required>
+            </div>
+            <button type="submit" class="upload-btn">Upload and Continue</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Time-based Greeting
+            const greetingEl = document.getElementById('greeting');
+            const hour = new Date().getHours();
+            if (hour < 12) {
+                greetingEl.textContent = 'Good Morning!';
+            } else if (hour < 18) {
+                greetingEl.textContent = 'Good Afternoon!';
+            } else {
+                greetingEl.textContent = 'Good Evening!';
+            }
+
+            // Random Motivational Quote
+            const quoteEl = document.getElementById('quote');
+            const quotes = [
+                "The secret of getting ahead is getting started.",
+                "Believe you can and you're halfway there.",
+                "The only way to do great work is to love what you do.",
+                "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+                "Your limitation—it's only your imagination."
+            ];
+            quoteEl.textContent = `"${quotes[Math.floor(Math.random() * quotes.length)]}"`;
+
+            // Add animation classes after a short delay
+            setTimeout(() => {
+                greetingEl.classList.add('fade-in-up');
+                quoteEl.classList.add('fade-in-up');
+            }, 100);
+        });
+    </script>
+</body>
+</html>

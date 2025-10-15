@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Preview - ERP Automator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container container-wide">
+        <h1>Report Preview</h1>
+        <p>Review your data below. If it looks correct, click download.</p>
+
+        <form action="{{ url_for('download_file', filename=filename) }}" method="post">
+            {% for key, value in metadata.items() %}
+            <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endfor %}
+            <button type="submit" class="download-btn">Download This Report as Excel</button>
+        </form>
+        
+        <a href="{{ url_for('view_file', filename=filename) }}" class="back-link">Go Back to Options</a>
+        
+        <div class="preview-section">
+            <div class="table-container">
+                {{ preview_table | safe }}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

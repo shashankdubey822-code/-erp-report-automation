@@ -1,0 +1,209 @@
+# ERP Report Automation System
+
+A Flask-based web application that automates the generation of attendance monitoring reports from ERP system data.
+
+## Features
+
+- **Secure File Upload**: Supports CSV and Excel files with content validation
+- **Automated Report Generation**: Converts raw ERP data into formatted Excel reports
+- **Flexible Data Parsing**: Handles various CSV formats and column structures
+- **Interactive Preview**: Preview reports before downloading
+- **Professional Excel Output**: Generates formatted reports with charts and conditional formatting
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/erp-report-automation.git
+cd erp-report-automation
+```
+
+2. Create a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+4. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env file and set your SECRET_KEY
+```
+
+## Usage
+
+1. Run the application:
+```bash
+python app.py
+```
+
+2. Open your browser and go to `http://localhost:5000`
+
+3. Upload your ERP CSV file
+
+4. Fill in the report details
+
+5. Generate preview or download the Excel report
+
+## File Format Requirements
+
+- CSV files with attendance data from ERP systems
+- Must contain student information (Roll No, Student Name)
+- Should have subject-wise attendance percentages
+- Headers should include identifiers like "Unique id", "Roll", or "Student Name"
+
+## Security Features
+
+- File upload validation
+- Secure filename handling
+- Content-type verification
+- Environment-based configuration
+- Input sanitization
+
+## Configuration
+
+Key configuration options in `.env`:
+
+- `SECRET_KEY`: Flask secret key for session security
+- `FLASK_ENV`: Environment (development/production)
+- `MAX_CONTENT_LENGTH`: Maximum upload file size
+- `LOG_LEVEL`: Logging level
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is for educational purposes.
+
+## Troubleshooting
+
+- Check application logs for detailed error messages
+- Ensure your CSV file format matches expected structure
+- Verify all required form fields are filled
+- Check file size limits if upload fails
+
+# ERP Report Automator
+
+A web application built with Python and Flask that automates the generation of professional, analytical attendance reports from raw ERP data. This tool transforms complex, multi-level CSV or Excel files into beautifully formatted, single-sheet Excel dashboards complete with conditional formatting, summary statistics, and analytical graphs.
+
+## Features
+
+-   **Dynamic User Interface:** A modern, animated web page greets the user and provides a smooth, multi-step workflow.
+-   **Flexible File Upload:** Accepts both `.csv` and Excel (`.xls`, `.xlsx`) raw ERP data files with robust backend validation.
+-   **Customizable Metadata:** Set report details like Monitoring Stage, Class Name, Division, and minimum attendance criteria through a user-friendly web form.
+-   **Live Preview:** Generate an instant HTML preview of the final data table on a dedicated page before committing to a download.
+-   **Advanced Excel Report Generation:** Downloads a professionally formatted single-sheet Excel (`.xlsx`) report which includes:
+    -   A precise, multi-line header with centered titles and detailed metadata.
+    -   A 3-level table header with Subject Names, Codes, and Types.
+    -   High-contrast conditional formatting to instantly highlight low attendance cells.
+    -   Customizable background coloring for headers and data rows.
+    -   An analytical bar chart visualizing subjects with the most students below the attendance threshold.
+
+## Tech Stack
+
+-   **Backend:** Python, Flask
+-   **Data Processing:** Pandas
+-   **Excel Manipulation:** Openpyxl
+-   **Frontend:** HTML, CSS, JavaScript
+
+## Local Setup and Usage (Windows)
+
+1.  **Clone the repository:**
+    ```bash
+    git clone <your-repository-url>
+    ```
+
+2.  **Navigate to the project directory:**
+    ```bash
+    cd erp_report_automator
+    ```
+
+3.  **Create and activate a virtual environment:**
+    ```bash
+    python -m venv venv
+    .\venv\Scripts\activate
+    ```
+
+4.  **Install the required dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+5.  **Run the application:**
+    ```bash
+    flask run
+    ```
+
+6.  Open a web browser and go to `http://127.0.0.1:5000`.
+```eof
+```markdown:Git Ignore File:.gitignore
+# Python virtual environment folder
+# This should never be uploaded to GitHub
+venv/
+*.pyc
+
+# Python cache directories
+__pycache__/
+
+# Folder for temporary file uploads
+# The contents of this folder should not be version controlled.
+uploads/
+
+# IDE/Editor configuration files (e.g., for VSCode)
+.vscode/
+.idea/
+```eof
+
+Now that you have these files, here is the complete step-by-step guide with the exact commands to upload your project.
+
+```markdown:GitHub Upload Guide:github_guide.md
+# In-Depth Guide to Upload Your Project to GitHub
+
+This guide will walk you through every step to get your `erp_report_automator` project onto your GitHub profile. Since you're on Windows, all commands are for the **Command Prompt** or **PowerShell**.
+
+---
+
+### Part 1: Prerequisites
+
+Before you start, you need **Git**, a version control tool that powers GitHub.
+
+1.  **Check if you have Git:** Open Command Prompt and type `git --version`. If it shows a version number (e.g., `git version 2.38.1.windows.1`), you're all set. If you get an error, you need to install it.
+2.  **Install Git:** Go to the official website: [git-scm.com/download/win](https://git-scm.com/download/win). Download and run the installer. The default options during installation are perfectly fine. After installation, close and reopen your Command Prompt.
+
+---
+
+### Part 2: Create a New Repository on GitHub.com
+
+1.  Log in to your GitHub account.
+2.  In the top-right corner, click the **`+`** icon and select **"New repository"**.
+3.  **Repository Name:** Give it a clear name, for example, `ERP-Report-Automator`.
+4.  **Description:** Add a short, informative description, like "A Flask web application to automate the generation of professional attendance reports from raw ERP data."
+5.  **Public/Private:** Select **Public** so that professors, recruiters, and collaborators can see your work.
+6.  **IMPORTANT:** **Do not** check the boxes for "Add a README file," "Add .gitignore," or "Choose a license." We have already created these files ourselves to be perfect for your project.
+7.  Click the green **"Create repository"** button.
+
+You will be taken to a new page titled "Quick setup". We will use the URL from this page in the next part.
+
+---
+
+### Part 3: The Commands to Upload Your Code
+
+Open your **Command Prompt** and follow these steps precisely.
+
+**Step 1: Navigate to Your Project Folder**
+Use the `cd` (change directory) command to go into your main project folder.
+
+```bash
+# Replace the path with the actual path to your project folder
+cd "C:\Users\hp\OneDrive - Manav Rachna Education Institutions\Desktop\sem3_manav_rachna\waste\New folder (2)"

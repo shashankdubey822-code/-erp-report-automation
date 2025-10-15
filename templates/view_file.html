@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Action - ERP Automator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>File Uploaded Successfully!</h1>
+        <p>Your file <strong style="color: #1d2129;">{{ original_filename }}</strong> is ready. Please fill in the report details and choose an action.</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for message in messages %}
+                        <div class="flash-message error">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="action-forms">
+            <!-- This single form will handle both preview and download -->
+            <form action="{{ url_for('download_file', filename=filename) }}" method="post" class="action-form">
+                <h3>Report Details</h3>
+
+                <!-- This hidden field is crucial for supporting different file types -->
+                <input type="hidden" name="original_filename" value="{{ original_filename }}">
+
+                <!-- DEBUG FIX: Added all the missing form fields -->
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="monitoring_stage">Monitoring Stage</label>
+                        <select id="monitoring_stage" name="monitoring_stage" required>
+                            <option>First Att Monitoring</option>
+                            <option>Second Att Monitoring</option>
+                            <option>Third Att Monitoring</option>
+                            <option>Low Attendance Review</option>
+                            <option>Final Att Monitoring</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="class_name">Class Name</label>
+                        <input type="text" id="class_name" name="class_name" value="BTech CSE Sem 5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="division">Division</label>
+                        <input type="text" id="division" name="division" value="A" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="date_range">Date Range</label>
+                        <input type="text" id="date_range" name="date_range" value="30/07/2024 to 14/11/2024" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="coordinator">Program Coordinator</label>
+                    <input type="text" id="coordinator" name="coordinator" value="Mr. XYZ" required>
+                </div>
+                <div class="form-group">
+                    <label for="min_attendance">Minimum Attendance Criteria (%)</label>
+                    <input type="number" id="min_attendance" name="min_attendance" value="75" required>
+                </div>
+                 <div class="button-group">
+                    <!-- The 'formaction' attribute overrides the main form's action for the preview button -->
+                    <button type="submit" formaction="{{ url_for('preview_file', filename=filename) }}" class="preview-btn">Generate Preview</button>
+                    <button type="submit" class="download-btn">Download Full Report</button>
+                </div>
+            </form>
+        </div>
+         <a href="{{ url_for('index') }}" class="back-link">Go Back and Upload a Different File</a>
+    </div>
+</body>
+</html>
