@@ -3,14 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERP Report Automator</title>
+    <title>ERP Report Automator - Smart Attendance Analysis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
 </head>
 <body>
     <div class="container">
-        <div class="welcome-header">
-            <h1 id="greeting">Welcome!</h1>
-            <p id="quote">Loading a quote for you...</p>
+        <div class="header-section">
+            <div class="logo-section">
+                <div class="logo">📊</div>
+                <h1 class="app-title">ERP Report Automator</h1>
+                <p class="app-subtitle">Transform your attendance data into professional reports</p>
+            </div>
+            <div class="welcome-header">
+                <h2 id="greeting">Welcome!</h2>
+                <p id="quote">Loading a quote for you...</p>
+            </div>
         </div>
         
         {% with messages = get_flashed_messages() %}
@@ -23,14 +31,52 @@
             {% endif %}
         {% endwith %}
 
-        <form action="/upload" method="post" enctype="multipart/form-data">
-             <h3>Start Here</h3>
-             <div class="form-group">
-                <label for="erp_file">Upload Your Raw ERP Data File (.csv)</label>
-                <input type="file" id="erp_file" name="erp_file" accept=".csv" required>
+        <div class="features-section">
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Smart Analysis</h3>
+                    <p>Automatically analyzes attendance patterns and identifies at-risk students</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3>Professional Reports</h3>
+                    <p>Generates Excel reports with charts, summaries, and conditional formatting</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Quick Processing</h3>
+                    <p>Processes hundreds of student records in seconds with error handling</p>
+                </div>
             </div>
-            <button type="submit" class="upload-btn">Upload and Continue</button>
-        </form>
+        </div>
+
+        <div class="upload-section">
+            <form action="/upload" method="post" enctype="multipart/form-data" class="upload-form">
+                <div class="upload-header">
+                    <h3>🚀 Get Started</h3>
+                    <p>Upload your ERP attendance data file to begin analysis</p>
+                </div>
+                
+                <div class="file-upload-area">
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-icon">📄</div>
+                        <p class="upload-text">Drag & drop your file here or <span class="browse-text">browse</span></p>
+                        <p class="upload-hint">Supports CSV files up to 16MB</p>
+                        <input type="file" id="erp_file" name="erp_file" accept=".csv" required style="display: none;">
+                    </div>
+                    <div class="file-info" id="fileInfo" style="display: none;">
+                        <span class="file-name" id="fileName"></span>
+                        <button type="button" class="remove-file" id="removeFile">×</button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="upload-btn" id="submitBtn" disabled>
+                    <span class="btn-text">Upload and Continue</span>
+                    <span class="btn-icon">→</span>
+                </button>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -39,29 +85,99 @@
             const greetingEl = document.getElementById('greeting');
             const hour = new Date().getHours();
             if (hour < 12) {
-                greetingEl.textContent = 'Good Morning!';
+                greetingEl.textContent = 'Good Morning! 🌅';
             } else if (hour < 18) {
-                greetingEl.textContent = 'Good Afternoon!';
+                greetingEl.textContent = 'Good Afternoon! ☀️';
             } else {
-                greetingEl.textContent = 'Good Evening!';
+                greetingEl.textContent = 'Good Evening! 🌆';
             }
 
             // Random Motivational Quote
             const quoteEl = document.getElementById('quote');
             const quotes = [
                 "The secret of getting ahead is getting started.",
-                "Believe you can and you're halfway there.",
-                "The only way to do great work is to love what you do.",
-                "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-                "Your limitation—it's only your imagination."
+                "Efficiency is doing things right; effectiveness is doing the right things.",
+                "Data is the new oil. Let's refine it into insights.",
+                "Automation is good, so long as you know exactly where to put the machine.",
+                "Your limitation—it's only your imagination.",
+                "Great reports tell stories that inspire action."
             ];
             quoteEl.textContent = `"${quotes[Math.floor(Math.random() * quotes.length)]}"`;
 
+            // Enhanced file upload functionality
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('erp_file');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const removeFile = document.getElementById('removeFile');
+            const submitBtn = document.getElementById('submitBtn');
+            const browseText = document.querySelector('.browse-text');
+
+            // Click to browse files
+            uploadZone.addEventListener('click', () => fileInput.click());
+            browseText.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fileInput.click();
+            });
+
+            // Drag and drop functionality
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('drag-over');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('drag-over');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelection(files[0]);
+                }
+            });
+
+            // File input change
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelection(e.target.files[0]);
+                }
+            });
+
+            // Handle file selection
+            function handleFileSelection(file) {
+                if (file.type !== 'text/csv' && !file.name.toLowerCase().endsWith('.csv')) {
+                    alert('Please select a CSV file.');
+                    return;
+                }
+                
+                if (file.size > 16 * 1024 * 1024) {
+                    alert('File size must be less than 16MB.');
+                    return;
+                }
+
+                fileName.textContent = file.name;
+                uploadZone.style.display = 'none';
+                fileInfo.style.display = 'flex';
+                submitBtn.disabled = false;
+            }
+
+            // Remove file
+            removeFile.addEventListener('click', () => {
+                fileInput.value = '';
+                uploadZone.style.display = 'flex';
+                fileInfo.style.display = 'none';
+                submitBtn.disabled = true;
+            });
+
             // Add animation classes after a short delay
             setTimeout(() => {
-                greetingEl.classList.add('fade-in-up');
-                quoteEl.classList.add('fade-in-up');
-            }, 100);
+                document.querySelector('.header-section').classList.add('fade-in-up');
+                document.querySelector('.features-section').classList.add('fade-in-up');
+                document.querySelector('.upload-section').classList.add('fade-in-up');
+            }, 200);
         });
     </script>
 </body>
