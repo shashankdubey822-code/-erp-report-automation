@@ -221,7 +221,6 @@ def create_excel_file(df, subject_details, metadata):
     """
     # Initialize output_buffer to ensure it's always defined
     output_buffer = BytesIO()
-    error_occurred = False
     
     try:
         # Safely rename columns - work on a copy to avoid modifying original
@@ -243,7 +242,6 @@ def create_excel_file(df, subject_details, metadata):
         
     except Exception as e:
         logger.error(f"Error creating Excel file: {e}")
-        error_occurred = True
         # Re-raise to let caller handle the error
         raise e
     
@@ -259,7 +257,6 @@ def _create_erp_format_report(worksheet, df, subject_details, metadata):
         # Define exact colors and styles from the image
         YELLOW_FILL = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
         RED_FILL = PatternFill(start_color="FF9999", end_color="FF9999", fill_type="solid")
-        WHITE_FILL = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
         
         THIN_BORDER = Border(
             left=Side(border_style='thin', color='000000'),
@@ -280,7 +277,7 @@ def _create_erp_format_report(worksheet, df, subject_details, metadata):
         data_start_row = _create_erp_data_headers(worksheet, df, subject_details, header_start_row, YELLOW_FILL, BLACK_FONT, BOLD_FONT, CENTER_ALIGN, THIN_BORDER)
         
         # Data rows
-        _add_erp_data_rows(worksheet, df, data_start_row, YELLOW_FILL, WHITE_FILL, BLACK_FONT, CENTER_ALIGN, THIN_BORDER)
+        _add_erp_data_rows(worksheet, df, data_start_row, YELLOW_FILL, BLACK_FONT, CENTER_ALIGN, THIN_BORDER)
         
         # Set column widths
         _set_erp_column_widths(worksheet)
@@ -410,7 +407,7 @@ def _create_erp_data_headers(worksheet, df, subject_details, start_row, yellow_f
     
     return start_row + 3
 
-def _add_erp_data_rows(worksheet, df, start_row, yellow_fill, white_fill, black_font, center_align, thin_border):
+def _add_erp_data_rows(worksheet, df, start_row, yellow_fill, black_font, center_align, thin_border):
     """Add data rows with yellow background matching ERP format"""
     
     for row_idx, row_data in enumerate(df.values.tolist()):
@@ -450,6 +447,4 @@ def _set_erp_column_widths(worksheet):
         worksheet.column_dimensions[col_letter].width = 12
 
 # Old helper functions removed - using new ERP format functions instead
-    output_buffer.seek(0)
-    return output_buffer
 
