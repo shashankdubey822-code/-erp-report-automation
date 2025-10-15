@@ -219,13 +219,14 @@ def create_excel_file(df, subject_details, metadata):
     """
     Creates Excel report matching the exact ERP format from the uploaded image.
     """
-    # Initialize output_buffer first to ensure it's always defined
+    # Initialize output_buffer to ensure it's always defined
     output_buffer = BytesIO()
+    error_occurred = False
     
     try:
-        # Safely rename columns
-        df = df.copy()  # Work on a copy to avoid modifying original
-        df.rename(columns={'Roll No_duplicate': 'Roll No'}, inplace=True)
+        # Safely rename columns - work on a copy to avoid modifying original
+        df_copy = df.copy()
+        df_copy.rename(columns={'Roll No_duplicate': 'Roll No'}, inplace=True)
         
         with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
             sheet_name = metadata.get('monitoring_stage', 'Report')[:31]  # Excel sheet name limit
@@ -236,17 +237,19 @@ def create_excel_file(df, subject_details, metadata):
                 writer.book.remove(writer.book['Sheet'])
             
             # Create exact ERP format matching the uploaded image
-            _create_erp_format_report(worksheet, df, subject_details, metadata)
-            
-        # Ensure buffer is properly positioned
-        output_buffer.seek(0)
-        logger.info(f"Excel file created successfully with {len(df)} rows")
+            _create_erp_format_report(worksheet, df_copy, subject_details, metadata)
+        
+        logger.info(f"Excel file created successfully with {len(df_copy)} rows")
         
     except Exception as e:
         logger.error(f"Error creating Excel file: {e}")
-        # Even if there's an error, return a valid BytesIO object
+        error_occurred = True
+        # Re-raise to let caller handle the error
+        raise e
+    
+    finally:
+        # Always ensure buffer is at the beginning, regardless of success or failure
         output_buffer.seek(0)
-        raise  # Re-raise the exception after logging
     
     return output_buffer
 
