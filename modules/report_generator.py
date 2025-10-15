@@ -219,52 +219,74 @@ def create_excel_file(df, subject_details, metadata):
     """
     Creates Excel report matching the exact ERP format from the uploaded image.
     """
-    df.rename(columns={'Roll No_duplicate': 'Roll No'}, inplace=True)
+    # Initialize output_buffer first to ensure it's always defined
     output_buffer = BytesIO()
     
-    with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
-        sheet_name = metadata['monitoring_stage']
-        worksheet = writer.book.create_sheet(title=sheet_name)
-        if 'Sheet' in writer.book.sheetnames:
-            writer.book.remove(writer.book['Sheet'])
+    try:
+        # Safely rename columns
+        df = df.copy()  # Work on a copy to avoid modifying original
+        df.rename(columns={'Roll No_duplicate': 'Roll No'}, inplace=True)
         
-        # Create exact ERP format matching the uploaded image
-        _create_erp_format_report(worksheet, df, subject_details, metadata)
-
-    output_buffer.seek(0)
+        with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
+            sheet_name = metadata.get('monitoring_stage', 'Report')[:31]  # Excel sheet name limit
+            worksheet = writer.book.create_sheet(title=sheet_name)
+            
+            # Remove default sheet if it exists
+            if 'Sheet' in writer.book.sheetnames:
+                writer.book.remove(writer.book['Sheet'])
+            
+            # Create exact ERP format matching the uploaded image
+            _create_erp_format_report(worksheet, df, subject_details, metadata)
+            
+        # Ensure buffer is properly positioned
+        output_buffer.seek(0)
+        logger.info(f"Excel file created successfully with {len(df)} rows")
+        
+    except Exception as e:
+        logger.error(f"Error creating Excel file: {e}")
+        # Even if there's an error, return a valid BytesIO object
+        output_buffer.seek(0)
+        raise  # Re-raise the exception after logging
+    
     return output_buffer
 
 def _create_erp_format_report(worksheet, df, subject_details, metadata):
     """Create exact ERP format matching the uploaded image"""
-    
-    # Define exact colors and styles from the image
-    YELLOW_FILL = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-    RED_FILL = PatternFill(start_color="FF9999", end_color="FF9999", fill_type="solid")
-    WHITE_FILL = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
-    
-    THIN_BORDER = Border(
-        left=Side(border_style='thin', color='000000'),
-        right=Side(border_style='thin', color='000000'),
-        top=Side(border_style='thin', color='000000'),
-        bottom=Side(border_style='thin', color='000000')
-    )
-    
-    BLACK_FONT = Font(color="000000", size=9, bold=False)
-    BOLD_FONT = Font(color="000000", size=9, bold=True)
-    CENTER_ALIGN = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    
-    # Header section (rows 1-10)
-    _create_erp_header_section(worksheet, metadata, YELLOW_FILL, RED_FILL, BLACK_FONT, BOLD_FONT, CENTER_ALIGN, THIN_BORDER)
-    
-    # Data headers (rows 11-15)
-    header_start_row = 11
-    data_start_row = _create_erp_data_headers(worksheet, df, subject_details, header_start_row, YELLOW_FILL, BLACK_FONT, BOLD_FONT, CENTER_ALIGN, THIN_BORDER)
-    
-    # Data rows
-    _add_erp_data_rows(worksheet, df, data_start_row, YELLOW_FILL, WHITE_FILL, BLACK_FONT, CENTER_ALIGN, THIN_BORDER)
-    
-    # Set column widths
-    _set_erp_column_widths(worksheet)
+    try:
+        # Define exact colors and styles from the image
+        YELLOW_FILL = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+        RED_FILL = PatternFill(start_color="FF9999", end_color="FF9999", fill_type="solid")
+        WHITE_FILL = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+        
+        THIN_BORDER = Border(
+            left=Side(border_style='thin', color='000000'),
+            right=Side(border_style='thin', color='000000'),
+            top=Side(border_style='thin', color='000000'),
+            bottom=Side(border_style='thin', color='000000')
+        )
+        
+        BLACK_FONT = Font(color="000000", size=9, bold=False)
+        BOLD_FONT = Font(color="000000", size=9, bold=True)
+        CENTER_ALIGN = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        
+        # Header section (rows 1-10)
+        _create_erp_header_section(worksheet, metadata, YELLOW_FILL, RED_FILL, BLACK_FONT, BOLD_FONT, CENTER_ALIGN, THIN_BORDER)
+        
+        # Data headers (rows 11-15)
+        header_start_row = 11
+        data_start_row = _create_erp_data_headers(worksheet, df, subject_details, header_start_row, YELLOW_FILL, BLACK_FONT, BOLD_FONT, CENTER_ALIGN, THIN_BORDER)
+        
+        # Data rows
+        _add_erp_data_rows(worksheet, df, data_start_row, YELLOW_FILL, WHITE_FILL, BLACK_FONT, CENTER_ALIGN, THIN_BORDER)
+        
+        # Set column widths
+        _set_erp_column_widths(worksheet)
+        
+        logger.info("ERP format report created successfully")
+        
+    except Exception as e:
+        logger.error(f"Error in _create_erp_format_report: {e}")
+        raise
 
 def _create_erp_header_section(worksheet, metadata, yellow_fill, red_fill, black_font, bold_font, center_align, thin_border):
     """Create the header section matching the ERP format"""
