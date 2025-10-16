@@ -1,6 +1,7 @@
 import os
 import uuid # For creating unique filenames
 import logging
+import time
 from flask import Flask, render_template, request, send_file, flash, redirect, url_for, abort
 # Ensure the report generator is imported correctly
 from modules.report_generator import create_report_dataframe, create_excel_file
@@ -14,6 +15,17 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 # Use environment variable for secret key, with fallback for development
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+# Public link to show in footer (can be your main site); override via env PROJECT_LINK_URL
+app.config['PROJECT_LINK_URL'] = os.environ.get('PROJECT_LINK_URL', 'https://erp-report-automation.onrender.com/')
+ASSET_VERSION = os.environ.get('ASSET_VERSION', str(int(time.time())))
+
+@app.context_processor
+def inject_globals():
+    # Inject global template variables (footer link, cache busting, etc.)
+    return {
+        'project_link_url': app.config['PROJECT_LINK_URL'],
+        'cache_buster': ASSET_VERSION,
+    }
 
 # File upload security settings
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
