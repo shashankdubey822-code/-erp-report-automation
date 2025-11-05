@@ -108,15 +108,15 @@
 
             // Random Motivational Quote
             const quoteEl = document.getElementById('quote');
-            const quotes = [
-                "The secret of getting ahead is getting started.",
-                "Efficiency is doing things right; effectiveness is doing the right things.",
-                "Data is the new oil. Let's refine it into insights.",
-                "Automation is good, so long as you know exactly where to put the machine.",
-                "Your limitation—it's only your imagination.",
-                "Great reports tell stories that inspire action."
-            ];
-            quoteEl.textContent = `"${quotes[Math.floor(Math.random() * quotes.length)]}"`;
+            fetch('https://api.quotable.io/random')
+                .then(response => response.json())
+                .then(data => {
+                    quoteEl.textContent = `"${data.content}"`;
+                })
+                .catch(error => {
+                    console.error('Error fetching quote:', error);
+                    quoteEl.textContent = '"The secret of getting ahead is getting started."'; // Fallback quote
+                });
 
             // Enhanced file upload functionality
             const uploadZone = document.getElementById('uploadZone');
