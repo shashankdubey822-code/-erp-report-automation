@@ -12,7 +12,8 @@
         <div class="header-section">
             <div class="logo-section">
                 <div class="logo">📊</div>
-                <h1 class="app-title">ERP Report Automator</h1>
+                <h1 class="app-title">UI TEST - PLEASE CONFIRM YOU SEE THIS</h1>
+                <a href="/chart" class="app-subtitle">View Chart</a>
                 <p class="app-subtitle">Transform your attendance data into professional reports</p>
             </div>
             <div class="welcome-header">
@@ -65,7 +66,7 @@
                         <p class="upload-hint">Supports CSV files up to 16MB</p>
                         <input type="file" id="erp_file" name="erp_file" accept=".csv" required style="display: none;">
                     </div>
-                    <div class="file-info" id="fileInfo" style="display: none;">
+                    <div class="file-info is-hidden" id="fileInfo">
                         <span class="file-name" id="fileName"></span>
                         <button type="button" class="remove-file" id="removeFile">×</button>
                     </div>
@@ -74,9 +75,22 @@
                 <button type="submit" class="upload-btn" id="submitBtn" disabled>
                     <span class="btn-text">Upload and Continue</span>
                     <span class="btn-icon">→</span>
+                    <div class="spinner"></div>
                 </button>
+                <div class="progress-bar-container is-hidden" id="progressBarContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
             </form>
         </div>
+
+        <!-- ✅ Developer Credit Section -->
+        <footer class="footer-section">
+            <p class="developer-credit">
+                Developed by <strong>Shashank Dubey</strong> and <strong>Vineet Kumar</strong><br>
+                Under the guidance of <strong>Dr. Mamta Arora</strong><br>
+                For the purpose of <strong>Manav Rachna University</strong>
+            </p>
+        </footer>
     </div>
 
     <script>
@@ -159,26 +173,108 @@
                 }
 
                 fileName.textContent = file.name;
-                uploadZone.style.display = 'none';
-                fileInfo.style.display = 'flex';
+                uploadZone.classList.add('is-hidden');
+                fileInfo.classList.remove('is-hidden');
                 submitBtn.disabled = false;
             }
 
             // Remove file
             removeFile.addEventListener('click', () => {
                 fileInput.value = '';
-                uploadZone.style.display = 'flex';
-                fileInfo.style.display = 'none';
+                uploadZone.classList.remove('is-hidden');
+                fileInfo.classList.add('is-hidden');
                 submitBtn.disabled = true;
             });
 
-            // Add animation classes after a short delay
-            setTimeout(() => {
-                document.querySelector('.header-section').classList.add('fade-in-up');
-                document.querySelector('.features-section').classList.add('fade-in-up');
-                document.querySelector('.upload-section').classList.add('fade-in-up');
-            }, 200);
+            // Staggered fade-in for sections
+            const sections = document.querySelectorAll('.header-section, .features-section, .upload-section, .footer-section');
+            sections.forEach((section, index) => {
+                setTimeout(() => {
+                    section.style.opacity = '1';
+                    section.style.transform = 'translateY(0)';
+                }, (index * 150) + 100); // Stagger delay
+            });
+
+            // Form submission listener for progress bar
+            const uploadForm = document.querySelector('.upload-form');
+            uploadForm.addEventListener('submit', (e) => {
+                e.preventDefault(); // Prevent default form submission
+
+                const submitBtn = document.getElementById('submitBtn');
+                const progressBarContainer = document.getElementById('progressBarContainer');
+                const progressBar = document.getElementById('progressBar');
+                const fileInput = document.getElementById('erp_file');
+                const file = fileInput.files[0];
+
+                if (!file) return;
+
+                // Show spinner and disable button
+                submitBtn.classList.add('loading');
+                submitBtn.disabled = true;
+
+                // Show progress bar
+                progressBarContainer.classList.remove('is-hidden');
+                progressBar.style.width = '0%';
+
+                const formData = new FormData();
+                formData.append('erp_file', file);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/upload', true);
+
+                // Listen for progress events
+                xhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const percentComplete = (event.loaded / event.total) * 100;
+                        progressBar.style.width = percentComplete + '%';
+                    }
+                });
+
+                // Handle completion
+                xhr.addEventListener('load', () => {
+                    progressBar.style.width = '100%';
+                    // Check if the response is a redirect
+                    if (xhr.responseURL && xhr.responseURL !== window.location.href) {
+                        window.location.href = xhr.responseURL;
+                    } else {
+                        // Handle cases where there might be an error message on the same page
+                        // This part may need adjustment based on server-side error handling
+                        document.body.innerHTML = xhr.responseText;
+                    }
+                });
+
+                // Handle errors
+                xhr.addEventListener('error', () => {
+                    alert('An error occurred during the file upload.');
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    progressBarContainer.classList.add('is-hidden');
+                });
+
+                xhr.send(formData);
+            });
         });
     </script>
+
+    <style>
+        .footer-section {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px 0;
+            font-size: 0.95rem;
+            color: #555;
+            border-top: 1px solid #ddd;
+        }
+
+        .developer-credit strong {
+            color: #2a4d8f;
+        }
+
+        .fade-in-up {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+    </style>
 </body>
 </html>

@@ -1,11 +1,15 @@
 import os
 import uuid # For creating unique filenames
 import logging
-from flask import Flask, render_template, request, send_file, flash, redirect, url_for, abort
+import json
+from flask import Flask, render_template, request, send_file, flash, redirect, url_for, abort, jsonify
 # Ensure the report generator is imported correctly
-from modules.report_generator import create_report_dataframe, create_excel_file
+from modules.report_generator import create_report_dataframe, create_excel_file, generate_summary_table_html, generate_chart_image
 from io import BytesIO
 from werkzeug.utils import secure_filename
+import base64
+from matplotlib.figure import Figure
+import pandas as pd
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -131,15 +135,19 @@ def preview_file(filename):
             flash('No data found in the uploaded file. Please check the file format.')
             return redirect(url_for('view_file', filename=filename, original_filename=original_filename))
         
-        preview_html = report_df.to_html(classes='preview-table', index=False, table_id='preview-table')
+        # Instead of rendering the table to HTML, we'll pass the data as JSON
+        data_json = report_df.to_json(orient='split')
         metadata = request.form.to_dict()
+        subject_details_json = json.dumps(subject_details)
         
         logger.info(f"Preview generated successfully for {len(report_df)} records")
         
         return render_template('preview.html', 
-                               preview_table=preview_html, 
+                               data_json=data_json, 
                                filename=filename,
-                               metadata=metadata)
+                               metadata=metadata,
+                               subject_details=subject_details,
+                               subject_details_json=subject_details_json)
                                
     except ValueError as e:
         logger.error(f"Data processing error for {filename}: {e}")
@@ -150,6 +158,33 @@ def preview_file(filename):
         flash('An unexpected error occurred during preview generation. Please try again.')
         return redirect(url_for('view_file', filename=filename, original_filename=original_filename))
 
+@app.route('/api/update_data/<filename>', methods=['POST'])
+def update_data(filename):
+    """Receives updated data, regenerates summary and chart, and returns them."""
+    try:
+        data = request.json['data']
+        min_attendance = float(request.json.get('min_attendance', 75))
+        
+        # Convert the received data back to a DataFrame
+        df = pd.DataFrame(data['data'], columns=data['columns'])
+        for col in df.columns:
+            if col not in ['Sr No.', 'Roll No', 'Student Name', 'Overall %age of all subjects from ERP report', 'Roll No_duplicate', 'Count of Courses with attendance below minimum attendance criteria', 'Whether Critical']:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+        
+        # Regenerate summary and chart
+        summary_html = generate_summary_table_html(df, min_attendance)
+        chart_image_buf = generate_chart_image(df)
+        chart_image_base64 = base64.b64encode(chart_image_buf.read()).decode('utf-8')
+        chart_image = f"data:image/png;base64,{chart_image_base64}"
+        
+        return jsonify({
+            'summary_table': summary_html,
+            'chart_image': chart_image
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating data for {filename}: {e}")
+        return jsonify({'error': 'An error occurred while updating the data.'}), 500
 
 @app.route('/download/<filename>', methods=['POST'])
 def download_file(filename):
@@ -160,15 +195,26 @@ def download_file(filename):
         return redirect(url_for('index'))
 
     try:
+        print(request.form)
         metadata = request.form.to_dict()
         metadata['min_attendance'] = float(metadata.get('min_attendance', 75))
         original_filename = metadata.get('original_filename', filename)
-        
-        logger.info(f"Generating Excel report for file: {filename} (original: {original_filename})")
-        logger.info(f"Report metadata: {metadata}")
 
-        with open(filepath, 'rb') as f:
-            report_df, subject_details = create_report_dataframe(f, metadata['min_attendance'], original_filename)
+        if 'updated_data' in request.form:
+            updated_data = json.loads(request.form['updated_data'])
+            report_df = pd.DataFrame(updated_data['data'], columns=updated_data['columns'])
+            if 'subject_details' in request.form:
+                subject_details = json.loads(request.form['subject_details'])
+            else:
+                subject_details = {}
+            for col in report_df.columns:
+                if col not in ['Sr No.', 'Roll No', 'Student Name', 'Overall %age of all subjects from ERP report', 'Roll No_duplicate', 'Count of Courses with attendance below minimum attendance criteria', 'Whether Critical']:
+                    report_df[col] = pd.to_numeric(report_df[col], errors='coerce').fillna(0)
+                    if col not in subject_details:
+                        subject_details[col] = {'code': '', 'type': ''} # We don't have this info, so leave it blank
+        else:
+            with open(filepath, 'rb') as f:
+                report_df, subject_details = create_report_dataframe(f, metadata['min_attendance'], original_filename)
         
         if report_df.empty:
             flash('No data found in the uploaded file. Please check the file format.')
@@ -176,7 +222,10 @@ def download_file(filename):
         
         logger.info(f"Generated report with {len(report_df)} records and {len(subject_details)} subjects")
         
-        excel_buffer = create_excel_file(report_df, subject_details, metadata)
+        # Generate chart
+        chart_image = generate_chart_image(report_df)
+        
+        excel_buffer = create_excel_file(report_df, subject_details, metadata, chart_image=chart_image)
         download_filename = f"{metadata.get('monitoring_stage', 'Report').replace(' ', '_')}.xlsx"
         
         logger.info(f"Excel file generated successfully: {download_filename}")
@@ -201,8 +250,48 @@ def download_file(filename):
         flash(f"An unexpected error occurred while generating the report: {str(e)}")
         return redirect(url_for('view_file', filename=filename, original_filename=metadata.get('original_filename', filename)))
 
+import base64
+from matplotlib.figure import Figure
+
+@app.route('/chart')
+def chart():
+    """Generates and displays a chart."""
+    # Sample data
+    courses = ['Mathematics', 'Biology', 'History', 'Physics', 'Chemistry']
+    students = [45, 60, 35, 50, 55]
+
+    # Generate the figure and axes
+    fig = Figure(figsize=(10, 6))
+    ax = fig.subplots()
+
+    # Create the bar chart
+    bars = ax.bar(courses, students, color='skyblue')
+
+    # Set title and labels
+    ax.set_title('Number of Students per Course', pad=20)
+    ax.set_xlabel('Courses')
+    ax.set_ylabel('Number of Students')
+
+    # Rotate X-axis labels
+    ax.tick_params(axis='x', rotation=45)
+
+    # Add data labels on top of bars
+    for bar in bars:
+        yval = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2.0, yval, int(yval), va='bottom') # va: vertical alignment
+
+    # Add contextual text
+    fig.text(0.02, 0.02, 'Hosted: Axis, Category, Axis, Monitoring',
+             fontsize=10, color='gray', style='italic')
+
+    # Save it to a temporary buffer
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    # Embed the result in the html output.
+    data = base64.b64encode(buf.getbuffer()).decode("ascii")
+    return render_template('chart.html', chart_image=data)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
+    print(f"Starting server on port {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
-
-
