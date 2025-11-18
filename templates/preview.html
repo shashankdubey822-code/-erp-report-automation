@@ -9,18 +9,22 @@
 <body>
     <div class="container container-wide">
         <h1>Report Preview</h1>
-        <p>Review your data below. You can edit the attendance values directly in the table. The summary and chart will update automatically.</p>
+        <p>Review your data below. The summary and chart are generated based on the initial data.</p>
 
-        <form id="download-form" action="{{ url_for('download_file', filename=filename) }}" method="post">
+        <form id="download-form" action="{{ url_for('download_file', filename=filename) }}" method="post" style="display: inline-block;">
             {% for key, value in metadata.items() %}
             <input type="hidden" name="{{ key }}" value="{{ value }}">
             {% endfor %}
-            <input type="hidden" name="subject_details" value='{{ subject_details_json | safe }}'>
             <button type="submit" class="download-btn">Download This Report as Excel</button>
         </form>
 
-        <button id="refresh-btn" class="refresh-btn" style="display: none;">Refresh Chart and Summary</button>
-        
+        <form id="download-pdf-form" action="{{ url_for('download_pdf', filename=filename) }}" method="post" style="display: inline-block;">
+            {% for key, value in metadata.items() %}
+            <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endfor %}
+            <button type="submit" class="download-btn">Download This Report as PDF</button>
+        </form>
+
         <a href="{{ url_for('view_file', filename=filename) }}" class="back-link">Go Back to Options</a>
         
         <div class="preview-section">
@@ -29,13 +33,15 @@
 
         <div class="summary-section">
             <h2>Summary</h2>
-            <div id="summary-container"></div>
+            <div id="summary-container">
+                {{ summary_table | safe }}
+            </div>
         </div>
 
         <div class="chart-section">
             <h2>Chart</h2>
             <div id="chart-container">
-                <img id="chart-image" src="" alt="Chart">
+                <img id="chart-image" src="{{ chart_image }}" alt="Chart">
             </div>
         </div>
     </div>
@@ -43,12 +49,9 @@
     <script>
         const data = JSON.parse('{{ data_json | safe }}');
         const subject_details = JSON.parse('{{ subject_details | tojson | safe }}');
-        const filename = '{{ filename }}';
         const minAttendance = {{ metadata.min_attendance | default(75) }};
 
         const tableContainer = document.getElementById('table-container');
-        const summaryContainer = document.getElementById('summary-container');
-        const chartImage = document.getElementById('chart-image');
 
         function renderTable() {
             const table = document.createElement('table');
@@ -89,9 +92,7 @@
                 row.forEach((cell, colIndex) => {
                     const td = document.createElement('td');
                     td.textContent = cell;
-                    if (colIndex > 2 && colIndex < data.columns.length - 4) { // Assuming subject columns start from the 4th column
-                        td.contentEditable = true;
-                        td.addEventListener('blur', () => handleCellEdit(rowIndex, colIndex, td.textContent));
+                    if (colIndex > 2 && colIndex < data.columns.length - 4) {
                         colorizeCell(td, cell);
                     }
                     tr.appendChild(td);
@@ -115,47 +116,8 @@
             }
         }
 
-        function handleCellEdit(rowIndex, colIndex, newValue) {
-            data.data[rowIndex][colIndex] = newValue;
-            colorizeCell(document.querySelector(`.preview-table tbody tr:nth-child(${rowIndex + 1}) td:nth-child(${colIndex + 1})`), newValue);
-            document.getElementById('refresh-btn').style.display = 'block';
-        }
-
-        document.getElementById('refresh-btn').addEventListener('click', () => {
-            updateAll();
-            document.getElementById('refresh-btn').style.display = 'none';
-        });
-
-        async function updateAll() {
-            const response = await fetch(`/api/update_data/${filename}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ data: data, min_attendance: minAttendance })
-            });
-
-            const result = await response.json();
-
-            if (result.summary_table) {
-                summaryContainer.innerHTML = result.summary_table;
-            }
-            if (result.chart_image) {
-                chartImage.src = result.chart_image;
-            }
-        }
-
-        document.getElementById('download-form').addEventListener('submit', (event) => {
-            const hiddenDataInput = document.createElement('input');
-            hiddenDataInput.type = 'hidden';
-            hiddenDataInput.name = 'updated_data';
-            hiddenDataInput.value = JSON.stringify(data);
-            event.target.appendChild(hiddenDataInput);
-        });
-
         // Initial render
         renderTable();
-        updateAll();
     </script>
 </body>
 </html>

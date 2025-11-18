@@ -4,4 +4,6 @@ openpyxl>=3.1.0,<4.0.0
 xlrd>=2.0.0,<3.0.0
 Werkzeug>=2.3.0,<3.0.0
 matplotlib>=3.0.0,<4.0.0
+reportlab
 gunicorn
+Flask-SQLAlchemy>=3.0.0,<4.0.0
