@@ -29,6 +29,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import (
     Image as RLImage,
+    PageBreak,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -64,11 +65,12 @@ def clean_subject_label(label: str) -> str:
 # -------------------------
 # Dataframe creation
 # -------------------------
-def create_report_dataframe(erp_file, min_attendance_criteria: int = 75) -> Tuple[pd.DataFrame, Dict]:
+def create_report_dataframe(erp_file, min_attendance_criteria: int = 75) -> Tuple[pd.DataFrame, Dict, Dict]:
     """
-    Parse ERP CSV-like file object and return (output_df, subject_details).
+    Parse ERP CSV-like file object and return (output_df, subject_details, extracted_metadata).
     output_df: DataFrame with 'Sr No.', 'Roll No', 'Student Name', subject percentage columns, etc.
     subject_details: dict mapping subject_name -> {'code': code, 'type': type}
+    extracted_metadata: dict with dynamically extracted header fields
     """
     erp_file.seek(0)
     raw = erp_file.read()
@@ -80,7 +82,26 @@ def create_report_dataframe(erp_file, min_attendance_criteria: int = 75) -> Tupl
     sio = StringIO(content)
     reader = csv.reader(sio)
     rows = list(reader)
-
+    
+    # Metadata extraction
+    extracted_metadata = {}
+    for row in rows[:20]:  # Scan top 20 rows for metadata
+        line = ",".join(row)
+        if "Branch:" in line:
+            extracted_metadata['branch'] = line.split("Branch:")[1].split(",")[0].strip()
+        if "Department:" in line:
+            extracted_metadata['department_specialization'] = line.split("Department:")[1].split(",")[0].strip()
+        if "Class Name:" in line:
+            extracted_metadata['class_name_division'] = line.split("Class Name:")[1].split(",")[0].strip()
+        if "Date:" in line:
+            extracted_metadata['date_range'] = line.split("Date:")[1].split(",")[0].strip()
+        if "Program Coordinator:" in line:
+            extracted_metadata['coordinator'] = line.split("Program Coordinator:")[1].split(",")[0].strip()
+        if "Academic Year:" in line:
+            extracted_metadata['academic_year'] = line.split("Academic Year:")[1].split("-")[0].strip()
+        if "Semester:" in line:
+            extracted_metadata['semester'] = line.split("Semester:")[1].split(",")[0].strip()
+    
     # Basic heuristics for header start
     header_start_index = -1
     header_patterns = [
@@ -161,6 +182,18 @@ def create_report_dataframe(erp_file, min_attendance_criteria: int = 75) -> Tupl
             final_headers.append(label)
             if subj not in subject_details:
                 subject_details[subj] = {"code": code, "type": typ}
+
+    # Deduplicate headers to prevent pandas error
+    new_headers = []
+    counts = {}
+    for header in final_headers:
+        if header in counts:
+            counts[header] += 1
+            new_headers.append(f"{header}_duplicate_{counts[header]}")
+        else:
+            counts[header] = 1
+            new_headers.append(header)
+    final_headers = new_headers
 
     # Data rows start: ERP often has 6 header lines; we'll use header_start_index + 6 as before
     data_start = header_start_index + 6
@@ -244,7 +277,7 @@ def create_report_dataframe(erp_file, min_attendance_criteria: int = 75) -> Tupl
         lambda c: "CRITICAL" if c > 4 else "Not Critical"
     )
 
-    return output_df, subject_details
+    return output_df, subject_details, extracted_metadata
 
 
 # -------------------------
@@ -293,18 +326,49 @@ def create_pdf_file(df: pd.DataFrame, subject_details: dict, metadata: dict, cha
     elements.append(Paragraph(meta_block, meta_style))
     elements.append(Spacer(1, 0.12 * inch))
 
-    # Build headers: single row with cleaned subject names
+    # Build headers
     raw_headers = list(df.columns)
     cleaned_headers = [clean_subject_label(h) for h in raw_headers]
     hdr_style = ParagraphStyle("hdr", fontSize=8, leading=9, alignment=1)
-
     wrapped_headers = [Paragraph(h or "", hdr_style) for h in cleaned_headers]
-
-    # Normalize data rows (as strings)
+    
     num_cols = len(cleaned_headers)
+
+    # 1. Define the "invisible boundary" trigger
+    COLUMN_THRESHOLD = 15
+    apply_aggressive_wrapping = num_cols > COLUMN_THRESHOLD
+
+    # 2. Dynamically set the width of the name column
+    name_col_idx = 2
+    try:
+        header_texts = [h.text.strip() for h in wrapped_headers]
+        name_col_idx = header_texts.index("Student Name")
+    except ValueError:
+        pass
+
+    if apply_aggressive_wrapping:
+        name_col_width = 0.8 * inch
+    else:
+        name_col_width = 1.65 * inch
+    
+    left_fixed = [0.45 * inch, 1.15 * inch, 1.65 * inch]  # Default widths
+    left_fixed[name_col_idx] = name_col_width  # Overwrite with dynamic width
+
+    # 3. Normalize data rows with selective wrapping
+    left_align_style = ParagraphStyle("data_cell_left", parent=styles["Normal"], fontSize=8, leading=9, alignment=0)
     normalized_rows = []
+
     for row in df.values.tolist():
-        row_list = [safe_str(x) for x in list(row)]
+        row_list = []
+        for i, cell_text in enumerate(list(row)):
+            if i == name_col_idx:
+                formatted_text = safe_str(cell_text)
+                if apply_aggressive_wrapping:
+                    formatted_text = formatted_text.replace(' ', '<br/>')
+                row_list.append(Paragraph(formatted_text, left_align_style))
+            else:
+                row_list.append(safe_str(cell_text))
+        
         if len(row_list) < num_cols:
             row_list += [""] * (num_cols - len(row_list))
         elif len(row_list) > num_cols:
@@ -317,27 +381,22 @@ def create_pdf_file(df: pd.DataFrame, subject_details: dict, metadata: dict, cha
     page_w = landscape(letter)[0]
     available = page_w - doc.leftMargin - doc.rightMargin
 
-    left_fixed = [0.45 * inch, 1.15 * inch, 1.65 * inch]  # Sr, Roll, Name
-    right_fixed_count = max(1, num_cols - (len(left_fixed) + (len(subject_details) or 1)))  # safe fallback
-    # But better: fix right fixed as last 4 columns if present
     right_fixed_count = 4 if num_cols >= (len(left_fixed) + 4) else max(0, num_cols - len(left_fixed) - len(subject_details))
     right_fixed_width = 0.8 * inch
 
-    # compute number of subject columns
-    # subject columns defined as all columns except left_fixed and right_fixed_count
     num_subject_cols = max(1, num_cols - (len(left_fixed) + right_fixed_count))
-
     remaining_width = available - sum(left_fixed) - (right_fixed_count * right_fixed_width)
-    # distribute evenly to subject columns
     subject_w = max(0.42 * inch, remaining_width / max(1, num_subject_cols))
+    
+    col_widths = list(left_fixed)
+    col_widths += [subject_w] * num_subject_cols
+    col_widths += [right_fixed_width] * right_fixed_count
 
-    col_widths = left_fixed + [subject_w] * num_subject_cols + [right_fixed_width] * right_fixed_count
-    # safety fix
     if len(col_widths) < num_cols:
         col_widths += [subject_w] * (num_cols - len(col_widths))
     col_widths = col_widths[:num_cols]
 
-    # Build table with repeatRows=1
+    # Build table
     table = Table(table_data, colWidths=col_widths, repeatRows=1)
     tbl_style = TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.Color(1, 1, 0, alpha=0.2)),
@@ -348,30 +407,30 @@ def create_pdf_file(df: pd.DataFrame, subject_details: dict, metadata: dict, cha
         ("GRID", (0, 0), (-1, -1), 0.35, colors.black),
     ])
 
-    # Highlight low attendance in subject columns (we detect subject columns by presence in subject_details)
+    # 4. Update highlighting logic
     min_att = metadata.get("min_attendance", 75)
-    # map header name -> column index
-    header_index = {h: i for i, h in enumerate(raw_headers)}
-
     for subj, col_name in subject_details.items():
-        # find a column index for the subject in df (we used subject names earlier)
-        # try exact match on subj or on cleaned label
         possible_cols = [c for c in raw_headers if str(c).startswith(subj) or clean_subject_label(c) == subj]
         for pc in possible_cols:
+            if pc not in raw_headers: continue
             col_idx = raw_headers.index(pc)
-            # iterate over data rows and check value in that column
-            for ridx, row in enumerate(normalized_rows, start=1):  # start=1 because header row is row 0 in table_data
+            
+            for ridx, row in enumerate(normalized_rows, start=1):
                 try:
-                    val = float(safe_str(row[col_idx]))
+                    cell_content = row[col_idx]
+                    val_str = cell_content.text if isinstance(cell_content, Paragraph) else cell_content
+                    val = float(safe_str(val_str))
                     if val < min_att:
                         tbl_style.add("BACKGROUND", (col_idx, ridx), (col_idx, ridx), colors.lightgrey)
-                except Exception:
-                    # ignore non-numeric
+                except (ValueError, IndexError):
                     pass
 
     table.setStyle(tbl_style)
     elements.append(table)
     elements.append(Spacer(1, 0.12 * inch))
+
+    # Page break after main table
+    elements.append(PageBreak())
 
     # Summary table
     subjects = list(subject_details.keys())
@@ -379,14 +438,12 @@ def create_pdf_file(df: pd.DataFrame, subject_details: dict, metadata: dict, cha
     summary_headers = ["Subject", "Students < 75%", "Students < 70%", "Students < 65%", "Students < 60%"]
     summary_rows = [summary_headers]
     for s in valid_subjects:
-        # find the actual column key in df
         col_key = None
         for c in df.columns:
             if str(c).startswith(s) or clean_subject_label(c) == s:
                 col_key = c
                 break
         if col_key is None:
-            # skip if not found
             continue
         summary_rows.append([
             s,
@@ -396,7 +453,6 @@ def create_pdf_file(df: pd.DataFrame, subject_details: dict, metadata: dict, cha
             int((pd.to_numeric(df[col_key], errors="coerce") < 60).sum()),
         ])
 
-    # Wrap summary subject column
     sum_hdr = ParagraphStyle("sumhdr", fontSize=8, alignment=1)
     sum_sub = ParagraphStyle("sumsub", fontSize=8, alignment=0)
     wrapped_summary = []
@@ -413,11 +469,7 @@ def create_pdf_file(df: pd.DataFrame, subject_details: dict, metadata: dict, cha
         wrapped_summary.append(new_row)
 
     summary_col_widths = [
-    3.0 * inch,   # Subject column (wider)
-    1.0 * inch,   # <75%
-    1.0 * inch,   # <70%
-    1.0 * inch,   # <65%
-    1.0 * inch    # <60%
+        3.0 * inch, 1.0 * inch, 1.0 * inch, 1.0 * inch, 1.0 * inch
     ]
 
     summary_table = Table(wrapped_summary, colWidths=summary_col_widths, hAlign="LEFT")
@@ -430,14 +482,30 @@ def create_pdf_file(df: pd.DataFrame, subject_details: dict, metadata: dict, cha
     elements.append(summary_table)
     elements.append(Spacer(1, 0.12 * inch))
 
+    # Page break after summary table
+    elements.append(PageBreak())
+
     # Optional chart image
     if chart_image:
         try:
             rl_img = RLImage(chart_image)
-            rl_img.drawHeight = 2.2 * inch
-            rl_img.drawWidth = 5.8 * inch
+            
+            img_w, img_h = rl_img.imageWidth, rl_img.imageHeight
+            if img_w <= 0 or img_h <= 0:
+                raise ValueError("Invalid image dimensions")
+
+            aspect = img_h / float(img_w)
+            new_w = doc.width
+            new_h = new_w * aspect
+
+            if new_h > doc.height:
+                new_h = doc.height
+                new_w = new_h / aspect
+            
+            rl_img.drawWidth = new_w
+            rl_img.drawHeight = new_h
+            rl_img.hAlign = 'CENTER'
             elements.append(rl_img)
-            elements.append(Spacer(1, 0.12 * inch))
         except Exception:
             logger.exception("Failed to attach chart image to PDF")
 
@@ -484,6 +552,40 @@ def update_worksheet(worksheet, df: pd.DataFrame):
             worksheet.column_dimensions[col_letter].width = 15
 
 
+def add_custom_header(ws, metadata):
+    """Adds a dynamic, multi-line, centered, and bolded header to the worksheet."""
+    # Safe fallbacks for metadata
+    dept_name = metadata.get('department_name', 'DEPT OF COMPUTER SCIENCE & TECHNOLOGY')
+    academic_year = metadata.get('academic_year', '2025-2026')
+    semester = metadata.get('semester', 'Odd')
+    branch = metadata.get('branch', 'MRU-School of Engineering')
+    department_specialization = metadata.get('department_specialization', 'B.Tech (Hons.) in Computer Science Engineering with specializations in Gen AI')
+    class_name_division = metadata.get('class_name_division', 'B.Tech CSE Gen AI Sem 1 | Division: All')
+    date_range = metadata.get('date_range', '28/07/2025 to 19/09/2025 (2025-2026)')
+    coordinator = metadata.get('coordinator', 'Mr. XYZ')
+
+    # Define header lines
+    header_lines = [
+        (dept_name, 'A1'),
+        (f"Academic Year: {academic_year} - Semester: {semester}", 'A2'),
+        ("ATTENDANCE MONITORING REPORT", 'A3'),
+        (f"Branch: {branch}", 'A4'),
+        (f"Department: {department_specialization}", 'A5'),
+        (f"Class Name: {class_name_division}", 'A6'),
+        (f"Date: {date_range}", 'A7'),
+        (f"Program Coordinator: {coordinator}", 'A8')
+    ]
+
+    bold_font = Font(bold=True)
+    center_alignment = Alignment(horizontal='center', vertical='center')
+
+    for line, cell_ref in header_lines:
+        cell = ws[cell_ref]
+        cell.value = line
+        cell.font = bold_font
+        cell.alignment = center_alignment
+        # Merge cells from column A to the last column of the header
+        ws.merge_cells(start_row=cell.row, start_column=1, end_row=cell.row, end_column=8)
 def create_excel_file(df, subject_details, metadata, chart_image=None):
     """Create an excel file safely without corrupting fills."""
     from openpyxl import Workbook
@@ -495,6 +597,10 @@ def create_excel_file(df, subject_details, metadata, chart_image=None):
     wb = Workbook()
     ws = wb.active
     ws.title = metadata.get("monitoring_stage", "Report")
+    
+    # Add the custom header
+    add_custom_header(ws, metadata)
+
 
     # Styles (valid only)
     vibrant_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
@@ -504,7 +610,7 @@ def create_excel_file(df, subject_details, metadata, chart_image=None):
                          top=Side(style="thin"), bottom=Side(style="thin"))
 
     # Header rows
-    start_row = 6
+    start_row = 10
     headers = list(df.columns)
 
     overall_idx = headers.index("Overall %age of all subjects from ERP report") + 1 \

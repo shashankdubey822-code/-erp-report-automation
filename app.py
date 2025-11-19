@@ -45,7 +45,9 @@ def download_pdf(filename):
         original_filename = metadata.get('original_filename', filename)
 
         with open(filepath, 'rb') as f:
-            report_df, subject_details = create_report_dataframe(f, metadata['min_attendance'])
+            report_df, subject_details, extracted_metadata = create_report_dataframe(f, metadata['min_attendance'])
+        
+        metadata.update(extracted_metadata)
 
         if report_df.empty:
             flash('No data found in the uploaded file. Please check the file format.')
@@ -185,266 +187,96 @@ def view_file(filename):
 
 
 @app.route('/preview/<filename>', methods=['POST'])
-
-
 def preview_file(filename):
-
-
     """Generates and displays the HTML preview table with improved error handling."""
-
-
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-
     if not os.path.exists(filepath):
-
-
         flash('File not found. Please upload the file again.')
-
-
         return redirect(url_for('index'))
 
-
-
-
-
     try:
-
-
         min_attendance = float(request.form.get('min_attendance', 75))
-
-
         original_filename = request.form.get('original_filename', filename)
-
-
-
-
 
         logger.info("Generating preview for file: %s (original: %s)", filename, original_filename)
 
-
-
-
-
         with open(filepath, 'rb') as f:
-
-
-            report_df, subject_details = create_report_dataframe(f, min_attendance)
-
-
-
-
+            report_df, subject_details, extracted_metadata = create_report_dataframe(f, min_attendance)
+        
+        metadata = request.form.to_dict()
+        metadata.update(extracted_metadata)
 
         if report_df.empty:
-
-
             flash('No data found in the uploaded file. Please check the file format.')
-
-
             return redirect(url_for('view_file', filename=filename, original_filename=original_filename))
 
-
-
-
-
         # Generate summary and chart on the server-side
-
-
         summary_html = generate_summary_table_html(report_df, min_attendance)
-
-
         chart_image_buf = generate_chart_image(report_df)
-
-
         chart_image_base64 = base64.b64encode(chart_image_buf.read()).decode('utf-8')
-
-
         chart_image = f"data:image/png;base64,{chart_image_base64}"
 
-
-
-
-
         data_json = report_df.to_json(orient='split')
-
-
-        metadata = request.form.to_dict()
-
-
         subject_details_json = json.dumps(subject_details)
-
-
-
-
 
         logger.info("Preview generated successfully for %d records", len(report_df))
 
-
-
-
-
         return render_template('preview.html',
-
-
                                data_json=data_json,
-
-
                                filename=filename,
-
-
                                metadata=metadata,
-
-
                                subject_details=subject_details,
-
-
                                subject_details_json=subject_details_json,
-
-
                                summary_table=summary_html,
-
-
                                chart_image=chart_image)
 
-
-
-
-
     except ValueError as e:
-
-
         logger.error("Data processing error for %s: %s", filename, e)
-
-
         flash(f"Data processing error: {str(e)}. Please check your file format.")
-
-
         return redirect(url_for('view_file', filename=filename, original_filename=original_filename))
-
-
     except (IOError, OSError) as e:
-
-
         logger.error("Unexpected error during preview generation for %s: %s", filename, e)
-
-
         flash('An unexpected error occurred during preview generation. Please try again.')
-
-
         return redirect(url_for('view_file', filename=filename, original_filename=original_filename))
-
-
-
-
-
-
 
 
 @app.route('/download/<filename>', methods=['POST'])
-
-
 def download_file(filename):
-
-
     """Generates and downloads the final Excel report with improved error handling."""
-
-
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-
     if not os.path.exists(filepath):
-
-
         flash('File not found. Please upload the file again.')
-
-
         return redirect(url_for('index'))
 
-
-
-
-
     try:
-
-
         metadata = request.form.to_dict()
-
-
         metadata['min_attendance'] = float(metadata.get('min_attendance', 75))
-
-
         original_filename = metadata.get('original_filename', filename)
 
-
-
-
-
         with open(filepath, 'rb') as f:
-
-
-            report_df, subject_details = create_report_dataframe(f, metadata['min_attendance'])
-
-
-
-
+            report_df, subject_details, extracted_metadata = create_report_dataframe(f, metadata['min_attendance'])
+        
+        metadata.update(extracted_metadata)
 
         if report_df.empty:
-
-
             flash('No data found in the uploaded file. Please check the file format.')
-
-
             return redirect(url_for('view_file', filename=filename, original_filename=original_filename))
-
-
-
-
 
         logger.info("Generated report with %d records and %d subjects", len(report_df), len(subject_details))
 
-
-
-
-
         # Generate chart
-
-
         chart_image = generate_chart_image(report_df)
 
-
-
-
-
         excel_buffer = create_excel_file(report_df, subject_details, metadata, chart_image=chart_image)
-
-
         download_filename = f"{metadata.get('monitoring_stage', 'Report').replace(' ', '_')}.xlsx"
-
-
-
-
 
         logger.info("Excel file generated successfully: %s", download_filename)
 
-
-
-
-
         return send_file(
-
-
             excel_buffer,
-
-
             as_attachment=True,
-
-
             download_name=download_filename,
-
-
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-
-
         )
 
     except KeyError as e:
