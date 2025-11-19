@@ -293,44 +293,6 @@ def download_file(filename):
         return redirect(url_for('view_file', filename=filename, original_filename=metadata.get('original_filename', filename)))
 
 
-@app.route('/chart')
-def chart():
-    """Generates and displays a chart."""
-    # Sample data
-    courses = ['Mathematics', 'Biology', 'History', 'Physics', 'Chemistry']
-    students = [45, 60, 35, 50, 55]
-
-    # Generate the figure and axes
-    fig = Figure(figsize=(10, 6))
-    ax = fig.subplots()
-
-    # Create the bar chart
-    chart_bars = ax.bar(courses, students, color='skyblue')
-
-    # Set title and labels
-    ax.set_title('Number of Students per Course', pad=20)
-    ax.set_xlabel('Courses')
-    ax.set_ylabel('Number of Students')
-
-    # Rotate X-axis labels
-    ax.tick_params(axis='x', rotation=45)
-
-    # Add data labels on top of bars
-    for bar_item in chart_bars:
-        yval = bar_item.get_height()
-        ax.text(bar_item.get_x() + bar_item.get_width() / 2.0, yval, int(yval), va='bottom')  # va: vertical alignment
-
-    # Add contextual text
-    fig.text(0.02, 0.02, 'Hosted: Axis, Category, Axis, Monitoring',
-             fontsize=10, color='gray', style='italic')
-
-    # Save it to a temporary buffer
-    buf = BytesIO()
-    fig.savefig(buf, format="png")
-    # Embed the result in the html output.
-    data = base64.b64encode(buf.getbuffer()).decode("ascii")
-    return render_template('chart.html', chart_image=data)
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
