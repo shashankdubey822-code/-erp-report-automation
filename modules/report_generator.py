@@ -15,6 +15,7 @@ import csv
 import logging
 import math
 import re
+import textwrap
 from io import BytesIO, StringIO
 from typing import Dict, Tuple, List
 
@@ -61,6 +62,16 @@ def clean_subject_label(label: str) -> str:
     s = re.sub(r"\s*-\s*$", "", s)  # trailing hyphen
     return s.strip()
 
+def format_attendance_value(value):
+    """Formats a numeric value to remove .0 if it's an integer, otherwise keeps float."""
+    try:
+        f_val = float(value)
+        if f_val.is_integer():
+            return int(f_val)
+        return f_val
+    except (ValueError, TypeError):
+        return value
+
 
 # -------------------------
 # Dataframe creation
@@ -101,6 +112,12 @@ def create_report_dataframe(erp_file, min_attendance_criteria: int = 75) -> Tupl
             extracted_metadata['academic_year'] = line.split("Academic Year:")[1].split("-")[0].strip()
         if "Semester:" in line:
             extracted_metadata['semester'] = line.split("Semester:")[1].split(",")[0].strip()
+        # Look for a line that might be the department name (all caps, single entry in row)
+        if len(row) == 1 and row[0].isupper() and 'department_name' not in extracted_metadata:
+             extracted_metadata['department_name'] = row[0].strip()
+        # Look for a line that might be the report title
+        if "ATTENDANCE" in line.upper() and 'report_title' not in extracted_metadata:
+            extracted_metadata['report_title'] = line.split(',')[0].strip()
     
     # Basic heuristics for header start
     header_start_index = -1
@@ -274,7 +291,7 @@ def create_report_dataframe(erp_file, min_attendance_criteria: int = 75) -> Tupl
         output_df["Count of Courses with attendance below minimum attendance criteria"] = 0
 
     output_df["Whether Critical"] = output_df["Count of Courses with attendance below minimum attendance criteria"].apply(
-        lambda c: "CRITICAL" if c > 4 else "Not Critical"
+        lambda c: "CRITICAL" if c >= 3 else ""
     )
 
     return output_df, subject_details, extracted_metadata
@@ -306,7 +323,7 @@ def create_pdf_file(df: pd.DataFrame, subject_details: dict, metadata: dict, cha
     # Title block
     title_style = ParagraphStyle("title", parent=styles["Title"], alignment=1, fontSize=14, leading=16)
     title_text = (
-        f"{safe_str(metadata.get('department', 'DEPARTMENT')).upper()}<br/>"
+        f"{safe_str(metadata.get('department_name', 'DEPARTMENT')).upper()}<br/>"
         f"{safe_str(metadata.get('date_range', '')).upper()}<br/>"
         f"{safe_str(metadata.get('report_title', 'ATTENDANCE REPORT')).upper()}"
     )
@@ -317,11 +334,11 @@ def create_pdf_file(df: pd.DataFrame, subject_details: dict, metadata: dict, cha
     meta_style = ParagraphStyle("meta", parent=styles["Normal"], fontSize=9, leading=11)
     meta_block = (
         f"<b>Branch:</b> {safe_str(metadata.get('branch', 'N/A'))} &nbsp; "
-        f"<b>Department:</b> {safe_str(metadata.get('department_full', metadata.get('department', 'N/A')))}<br/>"
-        f"<b>Class:</b> {safe_str(metadata.get('class_name', 'N/A'))} &nbsp; "
+        f"<b>Department:</b> {safe_str(metadata.get('department_specialization', 'N/A'))}<br/>"
+        f"<b>Class:</b> {safe_str(metadata.get('class_name_division', 'N/A'))} &nbsp; "
         f"<b>Division:</b> {safe_str(metadata.get('division', 'N/A'))} &nbsp; "
         f"<b>Date:</b> {safe_str(metadata.get('date_range', 'N/A'))} &nbsp; "
-        f"<b>Coordinator:</b> {safe_str(metadata.get('coordinator', 'N/A'))}"
+        f"<b>Coordinator:</b> {safe_str(metadata.get('coordinator', ''))}"
     )
     elements.append(Paragraph(meta_block, meta_style))
     elements.append(Spacer(1, 0.12 * inch))
@@ -366,6 +383,8 @@ def create_pdf_file(df: pd.DataFrame, subject_details: dict, metadata: dict, cha
                 if apply_aggressive_wrapping:
                     formatted_text = formatted_text.replace(' ', '<br/>')
                 row_list.append(Paragraph(formatted_text, left_align_style))
+            elif i > name_col_idx: # Apply formatting to columns after Student Name (likely attendance)
+                row_list.append(safe_str(format_attendance_value(cell_text)))
             else:
                 row_list.append(safe_str(cell_text))
         
@@ -469,7 +488,7 @@ def create_pdf_file(df: pd.DataFrame, subject_details: dict, metadata: dict, cha
         wrapped_summary.append(new_row)
 
     summary_col_widths = [
-        3.0 * inch, 1.0 * inch, 1.0 * inch, 1.0 * inch, 1.0 * inch
+        4.0 * inch, 1.5 * inch, 1.5 * inch, 1.5 * inch, 1.5 * inch
     ]
 
     summary_table = Table(wrapped_summary, colWidths=summary_col_widths, hAlign="LEFT")
@@ -558,17 +577,18 @@ def add_custom_header(ws, metadata):
     dept_name = metadata.get('department_name', 'DEPT OF COMPUTER SCIENCE & TECHNOLOGY')
     academic_year = metadata.get('academic_year', '2025-2026')
     semester = metadata.get('semester', 'Odd')
+    report_title = metadata.get('report_title', 'ATTENDANCE MONITORING REPORT')
     branch = metadata.get('branch', 'MRU-School of Engineering')
     department_specialization = metadata.get('department_specialization', 'B.Tech (Hons.) in Computer Science Engineering with specializations in Gen AI')
     class_name_division = metadata.get('class_name_division', 'B.Tech CSE Gen AI Sem 1 | Division: All')
     date_range = metadata.get('date_range', '28/07/2025 to 19/09/2025 (2025-2026)')
-    coordinator = metadata.get('coordinator', 'Mr. XYZ')
+    coordinator = metadata.get('coordinator', '')
 
     # Define header lines
     header_lines = [
         (dept_name, 'A1'),
         (f"Academic Year: {academic_year} - Semester: {semester}", 'A2'),
-        ("ATTENDANCE MONITORING REPORT", 'A3'),
+        (report_title, 'A3'),
         (f"Branch: {branch}", 'A4'),
         (f"Department: {department_specialization}", 'A5'),
         (f"Class Name: {class_name_division}", 'A6'),
@@ -586,7 +606,7 @@ def add_custom_header(ws, metadata):
         cell.alignment = center_alignment
         # Merge cells from column A to the last column of the header
         ws.merge_cells(start_row=cell.row, start_column=1, end_row=cell.row, end_column=8)
-def create_excel_file(df, subject_details, metadata, chart_image=None):
+def create_excel_file(df, subject_details, metadata, chart_image=None, report_color='#FFFF00'):
     """Create an excel file safely without corrupting fills."""
     from openpyxl import Workbook
     from openpyxl.drawing.image import Image as XLImage
@@ -603,7 +623,7 @@ def create_excel_file(df, subject_details, metadata, chart_image=None):
 
 
     # Styles (valid only)
-    vibrant_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    vibrant_fill = PatternFill(start_color=report_color.replace("#", ""), end_color=report_color.replace("#", ""), fill_type="solid")
     grey_fill = PatternFill(start_color="808080", end_color="808080", fill_type="solid")
     light_blue_fill = PatternFill(start_color="E6F3FF", end_color="E6F3FF", fill_type="solid")
     thin_border = Border(left=Side(style="thin"), right=Side(style="thin"),
@@ -637,6 +657,8 @@ def create_excel_file(df, subject_details, metadata, chart_image=None):
 
             # Highlight subject columns
             if 4 <= c <= df.shape[1] - 3:
+                formatted_val = format_attendance_value(val)
+                cell.value = formatted_val
                 try:
                     if float(val) < min_attendance:
                         cell.fill = grey_fill
@@ -724,9 +746,12 @@ def generate_chart_image(df: pd.DataFrame) -> BytesIO:
     courses = subject_columns
     students_below_75 = [(pd.to_numeric(df[c], errors="coerce") < 75).sum() for c in courses]
 
+    # Wrap long course names
+    wrapped_courses = [textwrap.fill(course, 15) for course in courses]
+
     fig = Figure(figsize=(12, 6))
     ax = fig.subplots()
-    bars = ax.bar(courses, students_below_75)
+    bars = ax.bar(wrapped_courses, students_below_75)
     ax.set_title("Number of Students with Attendance Below 75% per Course")
     ax.set_xlabel("Courses")
     ax.set_ylabel("Number of Students below 75%")

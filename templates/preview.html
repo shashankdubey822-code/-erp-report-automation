@@ -15,6 +15,7 @@
             {% for key, value in metadata.items() %}
             <input type="hidden" name="{{ key }}" value="{{ value }}">
             {% endfor %}
+            <input type="hidden" name="report_color" value="{{ report_color }}">
             <button type="submit" class="download-btn">Download This Report as Excel</button>
         </form>
 
@@ -22,6 +23,7 @@
             {% for key, value in metadata.items() %}
             <input type="hidden" name="{{ key }}" value="{{ value }}">
             {% endfor %}
+            <input type="hidden" name="report_color" value="{{ report_color }}">
             <button type="submit" class="download-btn">Download This Report as PDF</button>
         </form>
 

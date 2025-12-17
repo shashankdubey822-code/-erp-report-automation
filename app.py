@@ -114,7 +114,11 @@ def validate_file_content(file):
                 first_bytes.decode('utf-8')
                 return True
             except UnicodeDecodeError:
-                return False
+                try:
+                    first_bytes.decode('latin-1')
+                    return True
+                except UnicodeDecodeError:
+                    return False
 
         # For Excel files, check basic file signatures
         if file.filename.lower().endswith(('.xls', '.xlsx')):
@@ -122,7 +126,7 @@ def validate_file_content(file):
             excel_signatures = [b'PK\x03\x04', b'\xd0\xcf\x11\xe0']
             return any(first_bytes.startswith(sig) for sig in excel_signatures)
 
-        return True
+        return False
     except IOError as e:
         logger.error("Error validating file content: %s", e)
         return False
@@ -179,11 +183,26 @@ def upload_file():
 @app.route('/view/<filename>')
 def view_file(filename):
     """Shows the user the options for their uploaded file."""
-    # EDIT: Correctly get the original filename passed from the upload step
     original_filename = request.args.get('original_filename')
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    if not os.path.exists(filepath):
+        flash('File not found. Please upload the file again.')
+        return redirect(url_for('index'))
+
+    try:
+        with open(filepath, 'rb') as f:
+            # We parse the file here just to get the metadata for the form
+            _, _, extracted_metadata = create_report_dataframe(f, 75)
+    except Exception as e:
+        logger.error("Failed to pre-parse file %s: %s", filename, e)
+        flash("Could not read metadata from file. Please check the file format or fill in the details manually.")
+        extracted_metadata = {}
+
     return render_template('view_file.html',
                            filename=filename,
-                           original_filename=original_filename)
+                           original_filename=original_filename,
+                           metadata=extracted_metadata)
 
 
 @app.route('/preview/<filename>', methods=['POST'])
@@ -197,6 +216,7 @@ def preview_file(filename):
     try:
         min_attendance = float(request.form.get('min_attendance', 75))
         original_filename = request.form.get('original_filename', filename)
+        report_color = request.form.get('report_color', '#FFFF00')
 
         logger.info("Generating preview for file: %s (original: %s)", filename, original_filename)
 
@@ -228,7 +248,8 @@ def preview_file(filename):
                                subject_details=subject_details,
                                subject_details_json=subject_details_json,
                                summary_table=summary_html,
-                               chart_image=chart_image)
+                               chart_image=chart_image,
+                               report_color=report_color)
 
     except ValueError as e:
         logger.error("Data processing error for %s: %s", filename, e)
@@ -267,7 +288,8 @@ def download_file(filename):
         # Generate chart
         chart_image = generate_chart_image(report_df)
 
-        excel_buffer = create_excel_file(report_df, subject_details, metadata, chart_image=chart_image)
+        report_color = request.form.get('report_color', '#FFFF00')
+        excel_buffer = create_excel_file(report_df, subject_details, metadata, chart_image=chart_image, report_color=report_color)
         download_filename = f"{metadata.get('monitoring_stage', 'Report').replace(' ', '_')}.xlsx"
 
         logger.info("Excel file generated successfully: %s", download_filename)

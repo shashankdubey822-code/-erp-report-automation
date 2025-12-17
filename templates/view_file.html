@@ -28,54 +28,74 @@
             <form action="{{ url_for('download_file', filename=filename) }}" method="post" class="config-form">
                 <div class="form-header">
                     <h3>📊 Report Configuration</h3>
-                    <p>Configure the details for your attendance analysis report</p>
+                    <p>Configure the details for your attendance analysis report. We've pre-filled what we could find.</p>
                 </div>
 
-                <!-- This hidden field is crucial for supporting different file types -->
                 <input type="hidden" name="original_filename" value="{{ original_filename }}">
 
-                <!-- DEBUG FIX: Added all the missing form fields -->
                 <div class="form-grid">
+                    <div class="form-group">
+                        <label for="department_name">Department Name</label>
+                        <input type="text" id="department_name" name="department_name" value="{{ metadata.get('department_name', 'DEPT OF COMPUTER SCIENCE & TECHNOLOGY') }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="report_title">Report Title</label>
+                        <input type="text" id="report_title" name="report_title" value="{{ metadata.get('report_title', 'ATTENDANCE MONITORING REPORT') }}" required>
+                    </div>
                     <div class="form-group">
                         <label for="monitoring_stage">Monitoring Stage</label>
                         <select id="monitoring_stage" name="monitoring_stage" required>
-                            <option>First Att Monitoring</option>
-                            <option>Second Att Monitoring</option>
-                            <option>Third Att Monitoring</option>
-                            <option>Low Attendance Review</option>
-                            <option>Final Att Monitoring</option>
+                            <option {% if metadata.get('monitoring_stage') == 'First Att Monitoring' %}selected{% endif %}>First Att Monitoring</option>
+                            <option {% if metadata.get('monitoring_stage') == 'Second Att Monitoring' %}selected{% endif %}>Second Att Monitoring</option>
+                            <option {% if metadata.get('monitoring_stage') == 'Third Att Monitoring' %}selected{% endif %}>Third Att Monitoring</option>
+                            <option {% if metadata.get('monitoring_stage') == 'Low Attendance Review' %}selected{% endif %}>Low Attendance Review</option>
+                            <option {% if metadata.get('monitoring_stage') == 'Final Att Monitoring' %}selected{% endif %}>Final Att Monitoring</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="class_name">Class Name</label>
-                        <input type="text" id="class_name" name="class_name" value="BTech CSE Sem 5" required>
+                        <input type="text" id="class_name" name="class_name" value="{{ metadata.get('class_name_division', 'BTech CSE Sem 5') }}" required>
                     </div>
                     <div class="form-group">
                         <label for="division">Division</label>
-                        <input type="text" id="division" name="division" value="A" required>
+                        <input type="text" id="division" name="division" value="{{ metadata.get('division', 'A') }}" required>
                     </div>
                     <div class="form-group">
                         <label for="date_range">Date Range</label>
-                        <input type="text" id="date_range" name="date_range" value="30/07/2024 to 14/11/2024" required>
+                        <input type="text" id="date_range" name="date_range" value="{{ metadata.get('date_range', '30/07/2024 to 14/11/2024') }}" required>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="coordinator">Program Coordinator</label>
-                    <input type="text" id="coordinator" name="coordinator" value="Mr. XYZ" required>
+                    <input type="text" id="coordinator" name="coordinator" value="{{ metadata.get('coordinator', '') }}" required>
                 </div>
                 <div class="form-group">
                     <label for="min_attendance">Minimum Attendance Criteria (%)</label>
-                    <input type="number" id="min_attendance" name="min_attendance" value="75" required>
+                    <input type="number" id="min_attendance" name="min_attendance" value="{{ metadata.get('min_attendance', 75) }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="report_color">Report Color</label>
+                    <input type="color" id="report_color" name="report_color" value="#FFFF00">
                 </div>
                 <div class="action-buttons">
                     <button type="submit" formaction="{{ url_for('preview_file', filename=filename) }}" class="preview-btn">
                         <span class="btn-icon">🔍</span>
                         <span class="btn-text">Generate Preview</span>
                     </button>
-                    <button type="submit" class="download-btn">
-                        <span class="btn-icon">📊</span>
-                        <span class="btn-text">Download Full Report</span>
-                    </button>
+                    <div class="dropdown">
+                        <button type="button" class="download-btn">
+                            <span class="btn-icon">📊</span>
+                            <span class="btn-text">Download Report</span>
+                        </button>
+                        <div class="dropdown-content">
+                            <button type="submit" formaction="{{ url_for('download_file', filename=filename) }}">
+                                Download as Excel
+                            </button>
+                            <button type="submit" formaction="{{ url_for('download_pdf', filename=filename) }}">
+                                Download as PDF
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </form>
             
