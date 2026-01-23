@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Preview - ERP Automator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
+<body class="bg-light">
+    <div class="container my-5 p-4 bg-white shadow rounded-lg">
+
+        <h1 class="display-4 fw-bold text-center mb-3">Report Preview</h1>
+        <p class="lead text-muted text-center mb-5">Review your data below. The summary and chart are generated based on
+            the initial data.</p>
+
+        <div class="d-flex justify-content-center gap-3 mb-5">
+            <form action="{{ url_for('download_file', filename=filename) }}" method="post" class="d-inline-block">
+                {% for key, value in metadata.items() %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+                {% endfor %}
+                <input type="hidden" name="report_color" value="{{ report_color }}">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="bi bi-file-earmark-excel me-2"></i> Download as Excel
+                </button>
+            </form>
+
+            <form action="{{ url_for('download_pdf', filename=filename) }}" method="post" class="d-inline-block">
+                {% for key, value in metadata.items() %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+                {% endfor %}
+                <input type="hidden" name="report_color" value="{{ report_color }}">
+                <button type="submit" class="btn btn-danger btn-lg">
+                    <i class="bi bi-file-earmark-pdf me-2"></i> Download as PDF
+                </button>
+            </form>
+        </div>
+
+        <div class="text-center mb-5">
+            <a href="{{ url_for('view_file', filename=filename) }}" class="btn btn-link text-muted">
+                <i class="bi bi-arrow-left me-2"></i> Go Back to Options
+            </a>
+        </div>
+
+        <div class="my-5 p-4 border rounded shadow-sm bg-light">
+            <h2 class="h4 fw-bold mb-3">Data Preview</h2>
+            <div id="table-container" class="table-responsive"></div>
+        </div>
+
+        <div class="my-5 p-4 border rounded shadow-sm bg-light">
+            <h2 class="h4 fw-bold mb-3">Summary</h2>
+            <div id="summary-container">
+                {{ summary_table | safe }}
+            </div>
+        </div>
+
+        <div class="my-5 p-4 border rounded shadow-sm bg-light">
+            <h2 class="h4 fw-bold mb-3">Chart</h2>
+            <div id="chart-container" class="text-center">
+                <img id="chart-image" src="{{ chart_image }}" alt="Chart" class="img-fluid rounded">
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='theme.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Existing table rendering logic for preview.html
+            const data = JSON.parse('{{ data_json | safe }}');
+            const subject_details = JSON.parse('{{ subject_details | tojson | safe }}');
+            const minAttendance = {{ metadata.min_attendance | default (75)
+        }};
+
+        const tableContainer = document.getElementById('table-container');
+
+        function renderTable() {
+            const table = document.createElement('table');
+            table.className = 'table table-bordered table-hover mt-3';
+            const thead = document.createElement('thead');
+            const headerRow1 = document.createElement('tr');
+            const headerRow2 = document.createElement('tr');
+            const headerRow3 = document.createElement('tr'); // Corrected from document('<tr>')
+
+            data.columns.forEach(col => {
+                const th1 = document.createElement('th');
+                const th2 = document.createElement('th');
+                const th3 = document.createElement('th');
+
+                if (subject_details[col]) {
+                    th1.textContent = col;
+                    th2.textContent = subject_details[col].code;
+                    th3.textContent = subject_details[col].type;
+                } else {
+                    th1.textContent = col;
+                    th2.textContent = '';
+                    th3.textContent = '';
+                }
+                headerRow1.appendChild(th1);
+                headerRow2.appendChild(th2);
+                headerRow3.appendChild(th3);
+            });
+
+            thead.appendChild(headerRow1);
+            thead.appendChild(headerRow2);
+            thead.appendChild(headerRow3);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            data.data.forEach((row, rowIndex) => {
+                const tr = document.createElement('tr');
+                row.forEach((cell, colIndex) => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    if (colIndex > 2 && colIndex < data.columns.length - 4) {
+                        colorizeCell(td, cell);
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            tableContainer.innerHTML = '';
+            tableContainer.appendChild(table);
+        }
+
+        function colorizeCell(cell, value) {
+            const numericValue = parseFloat(value);
+            if (!isNaN(numericValue)) {
+                if (numericValue < minAttendance) {
+                    cell.style.backgroundColor = '#ffcccc';
+                } else {
+                    cell.style.backgroundColor = '';
+                }
+            }
+        }
+
+        // Initial render
+        renderTable();
+                });
+    </script>
+    
+</body>
+
+</html>

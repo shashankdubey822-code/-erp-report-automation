@@ -1,0 +1,1042 @@
+/* ==========================================================================
+   Sleek & Professional Theme (Cleaned for Bootstrap Integration)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------- */
+/*                                  Variables & Resets                        */
+/* -------------------------------------------------------------------------- */
+
+:root {
+    /* Keeping color variables for consistency and easy overrides */
+    --slate-blue: #4a69bd;
+    --teal-accent: #1abc9c;
+    --teal-accent-hover: #16a085;
+    --light-grey-bg: #f8f9fa;
+    --white: #ffffff;
+    --dark-text: #2c3e50;
+    --light-text: #7f8c8d;
+    --border-color: #e5e7eb;
+    --success-green: #2ecc71;
+    --error-red: #e74c3c;
+    --subtle-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.06);
+    --strong-shadow: 0 10px 15px rgba(0, 0, 0, 0.07), 0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+body {
+    /* Keep font-family, Bootstrap provides a good stack but this is a specific choice */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Utility for hiding elements, used by JS */
+.is-hidden {
+    display: none !important;
+}
+
+/* Initially hide joyful section */
+#night-mode-joyful-section {
+    display: none;
+}
+
+/* Animations */
+/* Custom shake for flash messages */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+}
+
+/* New Thematic Animations */
+@keyframes sun-burst-breathe {
+    0% { background-size: 150% 150%; }
+    50% { background-size: 170% 170%; }
+    100% { background-size: 150% 150%; }
+}
+
+@keyframes cloud-drift-subtle {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 100%; }
+}
+
+@keyframes golden-hour-fade {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes fade-in-smooth {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Staggered fade-in for sections */
+.fade-in-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.fade-in-up.loaded { /* Class added by JS to trigger animation */
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Custom color for developer credit strong tags, now applied via text-primary in HTML */
+.developer-credit strong {
+    color: var(--slate-blue);
+}
+
+/* Custom styling for preview table cells */
+/* This is kept because it's a specific functional style for conditional formatting */
+.preview-table {
+    /* Overridden by Bootstrap table classes, but keeping for reference if custom styles are still needed */
+}
+
+.preview-table th, .preview-table td {
+    /* Overridden by Bootstrap table classes, but keeping for reference if custom styles are still needed */
+}
+
+.preview-table th {
+    /* Overridden by Bootstrap table classes, but keeping for reference if custom styles are still needed */
+}
+
+.preview-table tbody tr:nth-child(even) {
+    /* Overridden by Bootstrap table classes, but keeping for reference if custom styles are still needed */
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                Dynamic Theming                             */
+/* -------------------------------------------------------------------------- */
+
+:root {
+    /* Dynamic Theme Variables - Default (Neutral/Day) */
+    --theme-bg-primary: #f0f2f5; /* Light, almost white background */
+    --theme-bg-secondary: #ffffff; /* Pure white for cards/containers */
+    --theme-text-primary: #343a40; /* Darker text */
+    --theme-text-secondary: #6c757d; /* Muted text */
+    --theme-accent-color: #007bff; /* Standard Bootstrap blue */
+    --theme-accent-color-rgb: 0, 123, 255;
+    --theme-card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Bootstrap-like shadow */
+    --theme-border-color: #dee2e6;
+    --theme-accent-color-hover: #0056b3;
+}
+
+/* Morning Theme - Bright and fresh */
+body.theme-morning {
+    --theme-bg-primary: linear-gradient(135deg, #e0f7fa, #b2ebf2); /* Soft gradient */
+    --theme-bg-secondary: #ffffff;
+    --theme-text-primary: #212529;
+    --theme-text-secondary: #495057;
+    --theme-accent-color: #28a745; /* Green accent */
+    --theme-accent-color-rgb: 40, 167, 69;
+    --theme-card-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+    --theme-border-color: #c3e6cb;
+    --theme-accent-color-hover: #1e7e34;
+}
+
+/* Afternoon Theme - Warm and energetic */
+body.theme-afternoon {
+    --theme-bg-primary: linear-gradient(135deg, #fff3e0, #ffe0b2); /* Warm gradient */
+    --theme-bg-secondary: #fff8e1;
+    --theme-text-primary: #3d3d3d;
+    --theme-text-secondary: #7e5700;
+    --theme-accent-color: #fd7e14; /* Orange accent */
+    --theme-accent-color-rgb: 253, 126, 20;
+    --theme-card-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.15);
+    --theme-border-color: #ffe5b4;
+    --theme-accent-color-hover: #da650b;
+}
+
+/* Evening/Night Theme - Dark, sophisticated, and calm */
+body.theme-evening {
+    --theme-bg-primary: linear-gradient(135deg, #212529, #343a40); /* Dark gradient */
+    --theme-bg-secondary: #2c3e50; /* Dark blue for cards */
+    --theme-text-primary: #ffffff; /* FORCE PURE WHITE TEXT */
+    --theme-text-secondary: #e0e0e0; /* Slightly off-white muted text */
+    --theme-accent-color: #6f42c1; /* Purple accent */
+    --theme-accent-color-rgb: 111, 66, 193;
+    --theme-card-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.4);
+    --theme-border-color: #495057;
+    --theme-accent-color-hover: #562d91;
+}
+
+/* True Dark Mode (User Activated) */
+body.theme-dark-mode {
+    --theme-bg-primary: #000000; /* Black background */
+    --theme-bg-secondary: #1a1a1a; /* Off-black for cards */
+    --theme-text-primary: #ffffff; /* White text */
+    --theme-text-secondary: #cccccc; /* Light grey for muted text */
+    --theme-accent-color: #bb86fc; /* A common dark-mode accent color (purple) */
+    --theme-accent-color-rgb: 187, 134, 252;
+    --theme-card-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.6);
+    --theme-border-color: #333333;
+    --theme-accent-color-hover: #9c68da; /* Darker purple for hover */
+}
+
+/* Specific overrides for Dark Mode to handle Bootstrap utility classes */
+body.theme-dark-mode .bg-white,
+body.theme-dark-mode .bg-light {
+    background-color: var(--theme-bg-secondary) !important;
+}
+
+body.theme-dark-mode .text-dark {
+    color: var(--theme-text-primary) !important;
+}
+
+/* Fix for tables in Dark Mode */
+body.theme-dark-mode .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--theme-text-primary);
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+    --bs-table-striped-color: var(--theme-text-primary);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.075);
+    --bs-table-hover-color: var(--theme-text-primary);
+    border-color: var(--theme-border-color);
+}
+
+body.theme-dark-mode .table-bordered {
+    border-color: var(--theme-border-color);
+}
+
+body.theme-dark-mode thead {
+    --bs-table-bg: #3b4d61;
+}
+
+/* Fix for form inputs and labels in Dark Mode */
+body.theme-dark-mode .form-control,
+body.theme-dark-mode .form-select {
+    background-color: #3b4d61;
+    color: var(--theme-text-primary);
+    border-color: var(--theme-border-color);
+}
+
+body.theme-dark-mode .form-label {
+    color: var(--theme-text-secondary) !important;
+}
+
+/* Aggressive text color override for Dark Mode */
+body.theme-dark-mode p,
+body.theme-dark-mode span:not(.text-primary),
+body.theme-dark-mode small,
+body.theme-dark-mode a:not(.btn):not(.text-primary),
+body.theme-dark-mode h1, body.theme-dark-mode h2, body.theme-dark-mode h3, body.theme-dark-mode h4, body.theme-dark-mode h5, body.theme-dark-mode h6 {
+    color: var(--theme-text-primary) !important;
+}
+
+body.theme-dark-mode .text-muted {
+    color: var(--theme-text-secondary) !important;
+}
+
+body.theme-dark-mode .text-primary { /* Ensure primary text is themed accent */
+    color: var(--theme-accent-color) !important;
+}
+
+/* Ensure cards themselves are dark in Dark Mode */
+body.theme-dark-mode .card,
+body.theme-dark-mode .card-body {
+    background-color: var(--theme-bg-secondary) !important;
+    color: var(--theme-text-primary) !important;
+    border-color: var(--theme-border-color) !important;
+}
+
+body.theme-dark-mode .card-title,
+body.theme-dark-mode .card-text {
+    color: var(--theme-text-primary) !important;
+}
+
+body.theme-dark-mode .card-text.text-muted {
+    color: var(--theme-text-secondary) !important;
+}
+
+/* Hide feature cards in dark mode */
+body.theme-dark-mode #feature-cards-section {
+    display: none !important;
+}
+
+/* Show joyful section in dark mode */
+body.theme-dark-mode #night-mode-joyful-section {
+    display: block !important;
+    animation: fade-in-smooth 1s ease-out forwards; /* Simple fade-in */
+}
+
+/* Styles for the joyful animation */
+.night-joy-animation {
+    width: 250px;
+    height: 250px; /* Adjusted height */
+    margin: auto; /* Allow JS to control top margin */
+    position: relative; /* Ensure positioned correctly */
+    background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: subtle-pulse 5s ease-in-out infinite alternate;
+}
+
+@keyframes subtle-pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.02); opacity: 1; }
+}
+
+
+
+/* Apply theme variables to generic Bootstrap elements */
+body {
+    background-color: var(--theme-bg-primary);
+    color: var(--theme-text-primary);
+    transition: background-color 0.8s ease, color 0.8s ease; /* Smooth transition for theme change */
+}
+
+/* Override Bootstrap and custom styles with theme variables */
+/* Target major content blocks and ensure they pick up theme variables */
+.container.my-5, .card, .alert { 
+    background-color: var(--theme-bg-secondary);
+    color: var(--theme-text-primary);
+    box-shadow: var(--theme-card-shadow);
+    border-color: var(--theme-border-color) !important; 
+    transition: background-color 0.8s ease, color 0.8s ease, box-shadow 0.8s ease, border-color 0.8s ease;
+}
+
+/* Typography elements */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--theme-text-primary);
+}
+p, .lead, .text-muted, .form-label {
+    color: var(--theme-text-secondary) !important;
+}
+
+/* Primary buttons and accents */
+.text-primary { color: var(--theme-accent-color) !important; }
+.btn-primary { 
+    background-color: var(--theme-accent-color) !important; 
+    border-color: var(--theme-accent-color) !important;
+    transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.btn-primary:hover {
+    background-color: var(--theme-accent-color-hover) !important; /* Use theme-defined hover color */
+    border-color: var(--theme-accent-color-hover) !important;
+}
+/* Specific Bootstrap alerts */
+.alert-info { 
+    background-color: rgba(var(--theme-accent-color-rgb), 0.1) !important; 
+    border-color: var(--theme-accent-color) !important; 
+    color: var(--theme-text-primary) !important; 
+}
+.alert-danger { /* Ensure error messages are still visible */
+    background-color: #fdeded !important;
+    border-color: #fad1d1 !important;
+    color: var(--error-red) !important;
+}
+
+/* Specific override for evening theme alert */
+body.theme-evening .alert-info {
+    border-color: #6f42c1 !important; /* Keep accent color for border */
+    color: var(--theme-text-primary) !important; /* Keep light text from theme */
+    background-image: linear-gradient(to right, #6F42C1 0%, #a350a3 50%, #6F42C1 100%) !important; /* Rich, evening gradient */
+    background-size: 200% 100% !important; /* Wider for horizontal shift */
+    animation: golden-hour-fade 15s ease infinite alternate; /* Slow, smooth shift */
+    background-color: #2c3e50; /* Fallback */
+}
+
+/* Apply animations to greeting box based on theme */
+body.theme-morning .alert-info {
+    border-color: var(--theme-border-color) !important;
+    color: var(--theme-text-primary) !important;
+    background-image: radial-gradient(circle at 15% 15%, #fffbd5 0%, #a0d9e2 70%, transparent 100%);
+    background-color: var(--theme-bg-primary); /* Fallback */
+    background-size: 150% 150%;
+    background-position: center center;
+    animation: sun-burst-breathe 10s ease-in-out infinite alternate;
+}
+
+body.theme-afternoon .alert-info {
+    border-color: var(--theme-border-color) !important;
+    color: var(--theme-text-primary) !important;
+    background-image:
+        linear-gradient(to right, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent),
+        linear-gradient(-45deg, #ffe0b2 0%, #fff8e1 100%); /* Base warm gradient */
+    background-color: var(--theme-bg-primary); /* Fallback */
+    background-size: 200% 200%, 100% 100%;
+    background-position: 0% 0%, 0% 0%;
+    animation: cloud-drift-subtle 15s linear infinite;
+}
+
+/* Specific overrides for evening theme to handle Bootstrap utility classes */
+body.theme-evening .bg-white,
+body.theme-evening .bg-light {
+    background-color: var(--theme-bg-secondary) !important; /* Use the theme's dark card color */
+}
+
+body.theme-evening .text-dark {
+    color: var(--theme-text-primary) !important; /* Ensure dark text becomes light */
+}
+
+/* Fix for tables in evening theme */
+body.theme-evening .table {
+    --bs-table-bg: transparent; /* Remove bootstrap's default white background */
+    --bs-table-color: var(--theme-text-primary); /* Use theme's light text */
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.05); /* Make striped tables subtly lighter */
+    --bs-table-striped-color: var(--theme-text-primary);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.075); /* Make hover rows subtly lighter */
+    --bs-table-hover-color: var(--theme-text-primary);
+    border-color: var(--theme-border-color); /* Use theme's border color */
+}
+
+body.theme-evening .table-bordered {
+    border-color: var(--theme-border-color);
+}
+
+body.theme-evening thead {
+    --bs-table-bg: #3b4d61; /* A darker header for the table */
+}
+
+/* Fix for form inputs and labels */
+body.theme-evening .form-control,
+body.theme-evening .form-select {
+    background-color: #3b4d61; /* Darker input background */
+    color: var(--theme-text-primary); /* Light text */
+    border-color: var(--theme-border-color);
+}
+
+body.theme-evening .form-label {
+    color: var(--theme-text-secondary) !important; /* Already set, but ensures it's enforced */
+}
+
+/* Aggressive text color override for dark mode to catch all lingering black text */
+body.theme-evening p,
+body.theme-evening span:not(.text-primary),
+body.theme-evening small,
+body.theme-evening a:not(.btn):not(.text-primary),
+body.theme-evening h1, body.theme-evening h2, body.theme-evening h3, body.theme-evening h4, body.theme-evening h5, body.theme-evening h6 {
+    color: var(--theme-text-primary) !important; /* Force primary text color (white) */
+}
+
+/* Ensure specifically muted text also gets a lighter secondary color */
+body.theme-evening .text-muted {
+    color: var(--theme-text-secondary) !important;
+}
+
+/* Re-ensure text-dark is handled */
+body.theme-evening .text-dark {
+    color: var(--theme-text-primary) !important;
+}
+
+/* Ensure cards themselves are dark in evening theme */
+body.theme-evening .card,
+body.theme-evening .card-body {
+    background-color: var(--theme-bg-secondary) !important;
+    color: var(--theme-text-primary) !important; /* Ensure primary text is white */
+    border-color: var(--theme-border-color) !important;
+}
+
+body.theme-evening .card-title, /* Explicitly target card titles */
+body.theme-evening .card-text { /* Explicitly target card text */
+    color: var(--theme-text-primary) !important; /* Force to primary white */
+}
+
+/* Re-ensure text-muted within cards is light grey */
+body.theme-evening .card-text.text-muted {
+    color: var(--theme-text-secondary) !important; /* Force to secondary light grey */
+}
+
+
+/* Form Elements */
+.form-label { color: var(--theme-text-primary); }
+.form-control, .form-select {
+    background-color: var(--theme-bg-secondary);
+    color: var(--theme-text-primary);
+    border-color: var(--theme-border-color);
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--theme-accent-color);
+    box-shadow: 0 0 0 0.25rem rgba(var(--theme-accent-color-rgb), 0.25);
+}
+
+/* Upload Zone Specifics */
+.upload-zone {
+    background-color: rgba(var(--theme-accent-color-rgb), 0.05); /* Lighter accent */
+    border-color: var(--theme-border-color); /* Themed border */
+    transition: all 0.8s ease;
+}
+.upload-zone:hover {
+    background-color: rgba(var(--theme-accent-color-rgb), 0.1);
+    border-color: var(--theme-accent-color);
+}
+.file-info {
+    background-color: var(--theme-bg-secondary);
+    color: var(--theme-text-primary);
+}
+.remove-file {
+    background-color: var(--theme-text-secondary); /* Use secondary text color for remove button */
+}
+
+/* Developer credit needs to maintain contrast */
+.developer-credit strong {
+    color: var(--theme-accent-color);
+}
+
+.theme-switcher-controls,
+.form-switch {
+    z-index: 1050;
+}
+
+.align-center-center{
+  justify-content:center;
+  align-items:center;
+}
+.flex{
+  display:flex;
+}
+.flex-row{
+  display:flex;
+  flex-direction:row;
+}
+.wrap{
+  flex-wrap:wrap;
+}
+html,body{
+    width: 100%;
+    height: 100%;
+}
+.owl-container {
+    position: absolute;
+    top: 385px;
+    left: 500px;
+    transform: translate(-50%, -50%);
+    width:800px;
+    height:800px;
+    z-index: 1; /* Ensure owl is in the background */
+    overflow: hidden;
+}
+
+/* Ensure the main content block (e.g., upload form) is above the owl */
+.container.my-5 > .my-5.p-4.border.rounded.shadow-sm {
+    position: relative; /* Needed for z-index to work */
+    z-index: 10; /* Higher than the owl */
+}
+:root{
+    --primary-body-color:#35bcdd;
+    --secondary-body-color:#1b5b6b;
+    --mix-color:#40a0bc;
+}
+.help-container{
+  color:white;
+  display:absolute;
+}
+.owl-body-top{
+    position: absolute;
+    top: 10%;
+    left:32.5%;
+    width: 35%;
+    height:30%;
+    border-radius:50%;
+    background-color: var(--secondary-body-color);
+    background: radial-gradient(var(--secondary-body-color) 56%,black);
+    z-index: 2;
+}
+.owl-body-bottom{
+    position: absolute;
+    top: 30%;
+    left:30%;
+    width: 40%;
+    height:28%;
+    border-radius:50%;
+    background-color:var(--primary-body-color);
+    background:radial-gradient(var(--primary-body-color) 16%,var(--secondary-body-color));
+    z-index: 3;
+    animation: breathe 3s 0.5s infinite;
+}
+.owl-eye-outer-border{
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items:center;
+    position:absolute;
+    width:200px;
+    height:200px;
+    background-color:var(--mix-color);
+    /*background: radial-gradient(var(--primary-body-color) 57%,var(--secondary-body-color));*/
+    border-radius:100px;
+}
+.eye-position-right{
+    top:14%;
+    right:27%;
+    z-index: 10;
+}
+.eye-position-left{
+    top:14%;
+    left:27%;
+    z-index: 10;
+}
+.eye-blank-area{
+    position: absolute;
+    width:170px;
+    height: 170px;
+    border-radius:85px;
+    background-color: white;
+    background:radial-gradient(white 50% ,var(--primary-body-color) 100%); 
+    margin:auto;
+    z-index: 20;
+    /*transform: rotate(0deg);*/
+    /*transition: transform 0.1s;*/
+}
+.eye-blank-pos-left{
+    top:16%;
+    left:28.85%;
+}
+.eye-blank-pos-right{
+    top:16%;
+    right:28.85%;
+}
+.pupil{
+   position: absolute;
+   width: 100px;
+   height: 100px;
+   border-radius: 50%;
+   background-color: black;
+   /*background: radial-gradient(#1f3c6b 47%,black);*/
+   /*left:-19%;*/
+   /*transition: left 0.5s,transform- 0.1s;;*/
+
+   /*box-shadow: 15px 15px 0 0 black;*/
+}
+.pupil::before{
+   content: "";
+   position: absolute;
+   width:50px;
+   height: 50px;
+   border-radius: 50%;
+   background-color:#031430;
+   /*background:radial-gradient(#212946,black);*/
+   left:25%;
+   top:25%;
+   margin:auto;
+   /*top:0%;*/
+   /*right: -6%;*/
+}
+.pupil::after{
+   content: "";
+   position: absolute;
+   width:10px;
+   height: 10px;
+   border-radius: 50%;
+   background-color:white;
+   top:9%;
+   right: 29%;
+}
+.shine{
+    display: none;
+    position: absolute;
+    width:40px;
+    height: 40px;
+    border-radius: 20px;
+    background-color: white;
+    top:0%;
+    right: 5%;
+}
+.wing-left{
+    position: absolute;
+    top:36%;
+    left:23%;
+    border-radius: 5px 300px 3px 300px;
+    background: linear-gradient(31deg,var(--secondary-body-color) 50%,#0e263a);
+    width: 164px;
+    height: 108px;
+    transform:rotate(64deg);
+    animation: left-wing-move 5s 0.5s infinite;
+    z-index: 8;
+}
+.wing-right{
+    position: absolute;
+    top:33%;
+    right:26%;
+    border-radius: 5px 300px 3px 300px;
+    background: linear-gradient(235deg,var(--secondary-body-color) 50%,#0e263a);
+    width: 108px;
+    height: 164px;
+    transform:rotate(382deg);
+    animation: right-wing-move 5s 0.5s infinite;
+    z-index: 8;
+}
+.peak{
+    position: absolute;
+    top:28%;
+    left:41.4%;
+    width: 0;
+    height: 0;
+    border-left:70px solid transparent;
+    border-right: 70px solid transparent;
+    border-top:80px solid #e6990c;
+    z-index: 15;
+}
+.feet-left{
+    position: absolute;
+    top:55%;
+    left:39%;
+    transform:rotate(7deg);
+    z-index: 25;
+}
+.feet-right{
+    position: absolute;
+    top:55%;
+    right:39%;
+    transform:rotate(-7deg);
+    z-index: 25;
+}
+.finger{
+    position: relative;
+    margin:1px;
+    width:20px;
+    height: 40px;
+    border-radius:10px;
+    background-color: orange;
+    background: linear-gradient(orange,#e47c11);
+}
+.body-feather {
+    position: relative;
+    /*padding:*/
+    margin:10px;
+    width: 0;
+    height: 0;
+    border-left:10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top:20px solid var(--secondary-body-color);
+}
+.feather-container{
+    position: relative;
+    top:10%;
+    margin: auto;
+    width: 150px
+}
+.ear{
+    position: absolute;
+    width: 96px;
+	height: 91px;
+    border-radius: 42%;
+    box-shadow: -20px 20px 0 0 var(--mix-color);   
+}
+.pos-ear-left::before{
+    content: '';
+    width: 20px;
+	height: 40px;
+    top:75%;
+    left:-19%;
+    border-radius:45%;
+    background-color:var(--mix-color); 
+    transform: rotate(-12deg);
+    position: absolute;
+}
+.pos-ear-right::before{
+    content: '';
+    width: 20px;
+	height: 40px;
+    top:87%;
+    left:-10%;
+    border-radius:45%;
+    background-color:var(--mix-color); 
+    /*background-color:black; */
+    transform: rotate(-78deg);
+    position: absolute;
+}
+.pos-ear-left{
+    transform:rotate(-12deg);
+    top:2.7%;
+    left: 31.5%;
+    animation: left-ear-move 4s 1s infinite;
+}
+.pos-ear-right{
+    transform:rotate(282deg);
+    top:2.7%;
+    right: 31.5%;
+    animation: right-ear-move 4s 1s infinite;
+}
+.eye-lid-up{
+    position: absolute;
+    width:170px;
+    height:85px;
+    margin:auto;
+    border-radius:170px 170px 0 0px;
+    background:linear-gradient(180deg,var(--primary-body-color) 0%,var(--primary-body-color) 100%,transparent 100%,transparent 100%); 
+    animation: lid-up-blink 2.5s infinite;
+    z-index:25;
+}
+.eye-lid-down{
+    position: absolute;
+    width:170px;
+    height:85px;
+    border-radius:0 0 170px 170px;
+    animation: lid-down-blink 2.5s infinite;
+    z-index: 25;
+}
+.mt85{
+    margin-top: 85px; 
+}
+ @keyframes lid-up-blink{
+    0%,12.5%,100%{
+     background:linear-gradient(180deg,var(--mix-color) 0%,var(--mix-color) 0%,transparent 0%,transparent 100%); 
+    }
+    1.25%,11.25%{
+     background:linear-gradient(180deg,var(--mix-color) 0%,var(--mix-color) 20%,transparent 20%,transparent 100%); 
+    }
+    2.5%,10%{
+     background:linear-gradient(180deg,var(--mix-color) 0%,var(--mix-color) 40%,transparent 40%,transparent 100%); 
+    }
+    3.75%,8.75%{
+     background:linear-gradient(180deg,var(--mix-color) 0%,var(--mix-color) 60%,transparent 60%,transparent 100%); 
+    }
+    5%,7.5%{
+     background:linear-gradient(180deg,var(--mix-color) 0%,var(--mix-color) 80%,transparent 80%,transparent 100%); 
+    }
+    6.25%{
+     background:linear-gradient(180deg,var(--mix-color) 0%,var(--mix-color) 100%,transparent 100%,transparent 100%); 
+    }
+}
+
+ @keyframes lid-down-blink{
+    0%,12.5%,100%{
+     background:linear-gradient(180deg, transparent 0%, transparent 100%,var(--mix-color) 100%,var(--mix-color) 100%); 
+    }
+    1.25%,11.25%{
+     background:linear-gradient(180deg, transparent 0%, transparent 80%,var(--mix-color) 80%,var(--mix-color) 100%); 
+    }
+    2.5%,10%{
+     background:linear-gradient(180deg, transparent 0%, transparent 60%,var(--mix-color) 60%,var(--mix-color) 100%); 
+    }
+    3.75%,8.75%{
+     background:linear-gradient(180deg, transparent 0%, transparent 40%,var(--mix-color) 40%,var(--mix-color) 100%);  
+    }
+    5%,7.5%{
+     background:linear-gradient(180deg, transparent 0%, transparent 20%,var(--mix-color) 20%,var(--mix-color) 100%);  
+    }
+    6.25%{
+     background:linear-gradient(180deg, transparent 0%, transparent 0%,var(--mix-color) 0%,var(--mix-color) 100%);   
+    }
+}
+ @keyframes lid-up-sleep{
+    0%{
+     background:linear-gradient(180deg,var(--mix-color) 0%,var(--mix-color) 0%,transparent 0%,transparent 100%); 
+    }
+    2%{
+     background:linear-gradient(180deg,var(--mix-color) 10%,var(--mix-color) 10%,transparent 10%,transparent 100%); 
+    }
+    4%{
+     background:linear-gradient(180deg,var(--mix-color) 20%,var(--mix-color) 20%,transparent 20%,transparent 100%); 
+    }
+    6%{
+     background:linear-gradient(180deg,var(--mix-color) 30%,var(--mix-color) 30%,transparent 30%,transparent 100%); 
+    }
+    8%{
+     background:linear-gradient(180deg,var(--mix-color) 40%,var(--mix-color) 40%,transparent 40%,transparent 100%); 
+    }
+    10%,30%,60%,85%{
+     background:linear-gradient(180deg,var(--mix-color) 50%,var(--mix-color) 50%,transparent 50%,transparent 100%); 
+    }
+    34%,58%,62%,82%,88%{
+     background:linear-gradient(180deg,var(--mix-color) 60%,var(--mix-color) 60%,transparent 60%,transparent 100%); 
+    }
+    38%,56%,64%,79%,91%{
+     background:linear-gradient(180deg,var(--mix-color) 70%,var(--mix-color) 70%,transparent 70%,transparent 100%); 
+    }
+    42%,54%,66%,76%,94%{
+     background:linear-gradient(180deg,var(--mix-color) 80%,var(--mix-color) 80%,transparent 80%,transparent 100%); 
+    }
+    46%,52%,68%,73%,97%{
+     background:linear-gradient(180deg,var(--mix-color) 90%,var(--mix-color) 90%,transparent 90%,transparent 100%); 
+    }
+    50%,70%,100%{
+     background:linear-gradient(180deg,var(--mix-color) 0%,var(--mix-color) 99%,var(--secondary-body-color) 100%); 
+    }
+}
+ @keyframes lid-down-sleep{
+    0%{
+     background:linear-gradient(180deg, transparent 0%, transparent 100%,var(--mix-color) 100%,var(--mix-color) 100%); 
+    }
+    2%{
+     background:linear-gradient(180deg, transparent 0%, transparent 90%,var(--mix-color) 90%,var(--mix-color) 100%); 
+    }
+    4%{
+     background:linear-gradient(180deg, transparent 0%, transparent 80%,var(--mix-color) 80%,var(--mix-color) 100%); 
+    }
+    6%{
+     background:linear-gradient(180deg, transparent 0%, transparent 70%,var(--mix-color) 70%,var(--mix-color) 100%); 
+    }
+    8%{
+     background:linear-gradient(180deg, transparent 0%, transparent 60%,var(--mix-color) 60%,var(--mix-color) 100%); 
+    }
+    10%,30%,60%,85%{
+     background:linear-gradient(180deg, transparent 0%, transparent 50%,var(--mix-color) 50%,var(--mix-color) 100%); 
+    }
+    34%,58%,62%,82%,88%{
+     background:linear-gradient(180deg, transparent 0%, transparent 40%,var(--mix-color) 40%,var(--mix-color) 100%); 
+    }
+    38%,56%,64%,79%,91%{
+     background:linear-gradient(180deg, transparent 0%, transparent 30%,var(--mix-color) 30%,var(--mix-color) 100%); 
+    }
+    42%,54%,66%,76%,94%{
+     background:linear-gradient(180deg, transparent 0%, transparent 20%,var(--mix-color) 20%,var(--mix-color) 100%); 
+    }
+    46%,52%,68%,73%,97%{
+     background:linear-gradient(180deg, transparent 0%, transparent 10%,var(--mix-color) 10%,var(--mix-color) 100%); 
+    }
+    50%,70%,100%{
+     background:linear-gradient(180deg, var(--secondary-body-color) 0%,var(--mix-color) 1%,var(--mix-color) 100%);   
+    }
+}
+ @keyframes lid-up-angry{
+    0%{
+     background:linear-gradient(180deg,var(--mix-color) 0%,var(--mix-color) 0%,transparent 0%,transparent 100%); 
+    }
+    10%{
+     background:linear-gradient(180deg,var(--mix-color) 5%,var(--mix-color) 5%,transparent 0%,transparent 100%); 
+    }
+    20%{
+     background:linear-gradient(180deg,var(--mix-color) 10%,var(--mix-color) 10%,transparent 10%,transparent 100%); 
+    }
+    30%{
+     background:linear-gradient(180deg,var(--mix-color) 15%,var(--mix-color) 15%,transparent 10%,transparent 100%); 
+    }
+    40%{
+     background:linear-.gradient(180deg,var(--mix-color) 20%,var(--mix-color) 20%,transparent 20%,transparent 100%); 
+    }
+    50%{
+     background:linear-gradient(180deg,var(--mix-color) 25%,var(--mix-color) 25%,transparent 20%,transparent 100%); 
+    }
+    60%{
+     background:linear-gradient(180deg,var(--mix-color) 30%,var(--mix-color) 30%,transparent 30%,transparent 100%); 
+    }
+    70%{
+     background:linear-gradient(180deg,var(--mix-color) 35%,var(--mix-color) 35%,transparent 30%,transparent 100%); 
+    }
+    80%{
+     background:linear-gradient(180deg,var(--mix-color) 40%,var(--mix-color) 40%,transparent 40%,transparent 100%); 
+    }
+    90%{
+     background:linear-gradient(180deg,var(--mix-color) 45%,var(--mix-color) 45%,transparent 40%,transparent 100%); 
+    }
+    100%{
+     background:linear-gradient(180deg,var(--mix-color) 50%,var(--mix-color) 50%,transparent 50%,transparent 100%); 
+    }
+}
+ @keyframes lid-down-angry{
+    0%{
+     background:linear-gradient(180deg, transparent 0%, transparent 100%,var(--mix-color) 100%,var(--mix-color) 100%); 
+    }
+    10%{
+     background:linear-gradient(180deg, transparent 0%, transparent 95%,var(--mix-color) 95%,var(--mix-color) 100%); 
+    }
+    20%{
+     background:linear-gradient(180deg, transparent 0%, transparent 90%,var(--mix-color) 90%,var(--mix-color) 100%); 
+    }
+    30%{
+     background:linear-gradient(180deg, transparent 0%, transparent 85%,var(--mix-color) 85%,var(--mix-color) 100%); 
+    }
+    40%{
+     background:linear-gradient(180deg, transparent 0%, transparent 80%,var(--mix-color) 80%,var(--mix-color) 100%); 
+    }
+    50%{
+     background:linear-gradient(180deg, transparent 0%, transparent 75%,var(--mix-color) 75%,var(--mix-color) 100%); 
+    }
+    60%{
+     background:linear-gradient(180deg, transparent 0%, transparent 70%,var(--mix-color) 70%,var(--mix-color) 100%); 
+    }
+    70%{
+     background:linear-gradient(180deg, transparent 0%, transparent 65%,var(--mix-color) 65%,var(--mix-color) 100%); 
+    }
+    80%{
+     background:linear-gradient(180deg, transparent 0%, transparent 60%,var(--mix-color) 60%,var(--mix-color) 100%); 
+    }
+    90%{
+     background:linear-gradient(180deg, transparent 0%, transparent 55%,var(--mix-color) 55%,var(--mix-color) 100%); 
+    }
+    100%{
+     background:linear-gradient(180deg, transparent 0%, transparent 50%,var(--mix-color) 50%,var(--mix-color) 100%); 
+    }
+}
+ @keyframes left-wing-move{
+    0%,10%,20%,100%{
+        transform:rotate(64deg);
+        left:23%;
+    }
+    5%,15%{
+        transform: rotate(100deg);
+        left:18%;
+    }
+}
+ @keyframes left-wing-sleep{
+    0%,100%{
+        transform:rotate(64deg);
+        left:23%;
+    }
+    50%{
+        transform: rotate(100deg);
+        left:18%;
+    }
+}
+ @keyframes right-wing-move{
+    0%,10%,20%,100%{
+        transform:rotate(382deg);
+        right:26%;
+    }
+    5%,15%{
+        transform: rotate(346deg);
+        right:23%;
+    }
+}
+ @keyframes right-wing-sleep{
+    0%,100%{
+        transform:rotate(382deg);
+        right:26%;
+    }
+    50%{
+        transform: rotate(346deg);
+        right:23%;
+    }
+}
+
+ @keyframes left-ear-move{
+    0%,25%,100%{
+        /*left: 31.5%;*/
+        transform:rotate(-12deg);
+    }
+    6%{
+        /*left: 30.5%;*/
+        transform: rotate(-18deg);
+    }
+    12%{
+        /*left: 31.5%;*/
+        transform: rotate(-24deg);
+    }
+    18%{
+        /*left: 32.5%;*/
+        transform: rotate(-18deg);
+    }
+}
+ @keyframes right-ear-move{
+    0%,25%,100%{
+        /*right: 31.5%;*/
+        transform:rotate(282deg);
+    }
+    6%{
+        /*right: 30.5%;*/
+        transform: rotate(288deg);
+    }
+    12%{
+        /*right: 31.5%;*/
+        transform: rotate(294deg);
+    }
+    18%{
+        /*right: 32.5%;*/
+        transform: rotate(288deg);
+    }
+}
+ @keyframes breathe{
+        0%{
+            transform:scale(1);
+        }
+        50%{
+            transform: scale(1.05);
+        }
+        100%{
+            transform: scale(1);
+        }
+}
