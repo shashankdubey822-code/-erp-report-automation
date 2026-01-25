@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ERP Report Automator - Smart Attendance Analysis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
-        <!-- Bootstrap 5 CSS -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    </head>
-    <body>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+
+<body>
     <div class="snowflakes" aria-hidden="true">
         <div class="snowflake">❅</div>
         <div class="snowflake">❅</div>
@@ -32,168 +36,250 @@
         <div class="snowflake">❆</div>
         <div class="snowflake">❄</div>
     </div>
-        <div class="container my-5 p-4 shadow rounded-lg">
-            <div class="theme-switcher-controls position-absolute top-0 start-0 mt-3 ms-3 d-flex flex-wrap gap-2">
-                <button class="btn btn-sm btn-outline-primary me-2" id="btn-morning-theme">Morning</button>
-                <button class="btn btn-sm btn-outline-warning me-2" id="btn-afternoon-theme">Afternoon</button>
-                <button class="btn btn-sm btn-outline-info" id="btn-evening-theme">Evening</button>
-            </div>
-            <div class="form-check form-switch position-absolute top-0 end-0 mt-3 me-3">
-                <input class="form-check-input" type="checkbox" role="switch" id="theme-toggle">
-                <label class="form-check-label" for="theme-toggle">Dark Mode</label>
-            </div>
-            <div class="text-center mb-5">
-                <div class="mb-4">
-                    <div class="display-1 mb-3 text-primary">📊</div>
-                    <h1 class="display-4 fw-bold text-dark mb-2">Smart Attendance Analysis</h1>
-                    <p class="lead text-muted mb-4">Transform your attendance data into professional reports</p>
+    <div class="container my-5 p-4 shadow rounded-lg">
+        <div class="theme-switcher-controls position-absolute top-0 start-0 mt-3 ms-3 d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-outline-primary me-2" id="btn-morning-theme">Morning</button>
+            <button class="btn btn-sm btn-outline-warning me-2" id="btn-afternoon-theme">Afternoon</button>
+            <button class="btn btn-sm btn-outline-info" id="btn-evening-theme">Evening</button>
+        </div>
+        <div class="position-absolute top-0 end-0 mt-3 me-3">
+            <label class="switch">
+                <input id="theme-toggle" type="checkbox" aria-label="Toggle Dark Mode" />
+                <div class="slider round">
+                    <div class="sun-moon" aria-hidden="true">
+                        <svg id="moon-dot-1" class="moon-dot" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="moon-dot-2" class="moon-dot" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="moon-dot-3" class="moon-dot" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="light-ray-1" class="light-ray" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="light-ray-2" class="light-ray" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="light-ray-3" class="light-ray" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+
+                        <svg id="cloud-1" class="cloud-dark" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="cloud-2" class="cloud-dark" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="cloud-3" class="cloud-dark" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="cloud-4" class="cloud-light" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="cloud-5" class="cloud-light" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="cloud-6" class="cloud-light" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                    </div>
+                    <div class="stars" aria-hidden="true">
+                        <svg id="star-1" class="star" viewBox="0 0 20 20">
+                            <path
+                                d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z">
+                            </path>
+                        </svg>
+                        <svg id="star-2" class="star" viewBox="0 0 20 20">
+                            <path
+                                d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z">
+                            </path>
+                        </svg>
+                        <svg id="star-3" class="star" viewBox="0 0 20 20">
+                            <path
+                                d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z">
+                            </path>
+                        </svg>
+                        <svg id="star-4" class="star" viewBox="0 0 20 20">
+                            <path
+                                d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z">
+                            </path>
+                        </svg>
+                    </div>
                 </div>
-                <div class="alert alert-info py-2" role="alert">
+            </label>
+        </div>
+        <div class="text-center mb-5">
+            <div class="mb-4">
+                <div class="display-1 mb-3 text-primary">📊</div>
+                <h1 class="display-4 fw-bold text-dark mb-2">Smart Attendance Analysis</h1>
+                <p class="lead text-muted mb-4">Transform your attendance data into professional reports</p>
+            </div>
+            <div class="alert alert-info py-2" role="alert">
+                <div class="greeting-container">
                     <h4 id="greeting" class="alert-heading mb-1">Welcome!</h4>
                     <p class="mb-0">{{ motivational_quote }}</p>
                 </div>
             </div>
-                                {% with messages = get_flashed_messages() %}
-                                    {% if messages %}
-                                        <div class="my-4">
-                                            {% for message in messages %}
-                                                <div class="alert alert-danger" role="alert">{{ message }}</div>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                {% endwith %}    
-                    <div class="my-5" id="feature-cards-section">
-                        <div class="row row-cols-1 row-cols-md-3 g-4">
-                            <div class="col">
-                                <div class="card h-100 shadow-sm">
-                                    <div class="card-body text-center">
-                                        <div class="fs-1 mb-3 text-primary">📊</div>
-                                        <h5 class="card-title fw-bold">Smart Analysis</h5>
-                                        <p class="card-text text-muted">Automatically analyzes attendance patterns and identifies at-risk students</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col">
-                                <div class="card h-100 shadow-sm">
-                                    <div class="card-body text-center">
-                                        <div class="fs-1 mb-3 text-primary">📝</div>
-                                        <h5 class="card-title fw-bold">Professional Reports</h5>
-                                        <p class="card-text text-muted">Generates Excel reports with charts, summaries, and conditional formatting</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col">
-                                <div class="card h-100 shadow-sm">
-                                    <div class="card-body text-center">
-                                        <div class="fs-1 mb-3 text-primary">⚡</div>
-                                        <h5 class="card-title fw-bold">Quick Processing</h5>
-                                        <p class="card-text text-muted">Processes hundreds of student records in seconds with error handling</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>    
-                    <!-- New joyful section for dark mode -->
-                    <div class="my-5" id="night-mode-joyful-section" style="display: none;">
-                        <div class="text-center p-5 rounded" style="background: var(--theme-bg-secondary); border: 1px solid var(--theme-border-color);">
-                            <h2 class="display-5 fw-bold" style="color: var(--theme-text-primary);">🌙 Sweet Dreams! ✨</h2>
-                            <p class="lead" style="color: var(--theme-text-secondary);">The stars are out, and your reports are waiting. Enjoy the calm night.</p>
-                            <div class="night-joy-animation">
-
-                                <div class="owl-container">
-                                    <div class="owl-body-top"></div>
-                                    <div class="owl-body-bottom flex-row align-center-center wrap" onclick="angryStart(event)">
-                                        <div class="feather-container flex-row align-center-center wrap">
-                                            <div class="body-feather"></div>
-                                            <div class="body-feather"></div>
-                                            <div class="body-feather"></div>
-                                            <div class="body-feather"></div>
-                                            <div class="body-feather"></div>
-                                        </div>
-                                    </div>
-                                    <div class="owl-eye-outer-border eye-position-left" onclick="angryStart(event)"></div>
-                                    <div id="eyeLeft" class="eye-blank-area eye-blank-pos-left" onclick="angryStart(event)">
-                                        <div id="pupilLeft" class="pupil">
-                                            <div class="shine"></div>
-                                        </div>
-                                    </div>
-                                    <div class="eye-lid-up eye-blank-pos-left" onclick="angryStart(event)"></div>
-                                    <div class="eye-lid-down eye-blank-pos-left mt85" onclick="angryStart(event)"></div>
-
-                                    <div class="owl-eye-outer-border eye-position-right" onclick="angryStart(event)"></div>
-                                    <div id="eyeRight" class="eye-blank-area eye-blank-pos-right" onclick="angryStart(event)">
-                                        <div id="pupilRight" class="pupil">
-                                            <div class="shine"></div>
-                                        </div>
-                                    </div>
-                                    <div class="eye-lid-up eye-blank-pos-right" onclick="angryStart(event)"></div>
-                                    <div class="eye-lid-down eye-blank-pos-right mt85" onclick="angryStart(event)"></div>
-                                    <div class="wing-left" onclick="angryStart(event)"></div>
-                                    <div class="wing-right" onclick="angryStart(event)"></div>
-                                    <div class="peak" onclick="angryStart(event)"></div>
-                                    <div class="feet-left flex-row align-center-center">
-                                        <div class="finger"></div>
-                                        <div class="finger"></div>
-                                        <div class="finger"></div>
-                                    </div>
-                                    <div class="feet-right flex-row align-center-center">
-                                        <div class="finger"></div>
-                                        <div class="finger"></div>
-                                        <div class="finger"></div>
-                                    </div>
-                                    <div class="ear pos-ear-left"></div>
-                                    <div class="ear pos-ear-right"></div>
-                                </div>
-                            </div>
+        </div>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="my-4">
+            {% for message in messages %}
+            <div class="alert alert-danger" role="alert">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <div class="my-5" id="feature-cards-section">
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="fs-1 mb-3 text-primary">📊</div>
+                            <h5 class="card-title fw-bold">Smart Analysis</h5>
+                            <p class="card-text text-muted">Automatically analyzes attendance patterns and identifies
+                                at-risk students</p>
                         </div>
                     </div>
-                    <div class="my-5 p-4 border rounded shadow-sm">
-                        <form action="/upload" method="post" enctype="multipart/form-data">
-                            <div class="text-center mb-4">
-                                <h4 class="fw-bold mb-2">🚀 Get Started</h4>
-                                <p class="text-muted">Upload your ERP attendance data file to begin analysis</p>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <div class="p-5 border rounded bg-light text-center" id="uploadZone" style="cursor: pointer;" x-data="{ uploadHover: false }" @mouseenter="uploadHover = true" @mouseleave="uploadHover = false" :class="{ 'border-primary': uploadHover, 'border-secondary': !uploadHover }">
-                                    <div class="fs-1 text-muted mb-3">📄</div>
-                                    <p class="lead text-muted">Drag & drop your file here or <span class="text-primary fw-bold" style="cursor: pointer;">browse</span></p>
-                                    <small class="text-muted">Supports CSV files up to 16MB</small>
-                                    <input type="file" id="erp_file" name="erp_file" accept=".csv" required style="display: none;">
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center p-3 border rounded shadow-sm is-hidden" id="fileInfo">
-                                    <span class="fw-bold" id="fileName"></span>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" id="removeFile">×</button>
-                                </div>
-                            </div>
-                            
-                            <button type="submit" class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center" id="submitBtn" disabled>
-                                <span class="me-2">Upload and Continue</span>
-                                <span>→</span>
-                                <div class="spinner-border spinner-border-sm ms-2" role="status" style="display: none;"></div>
-                            </button>
-                            <div class="progress mt-3 is-hidden" id="progressBarContainer" style="height: 20px;">
-                                <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progressBar"></div>
-                            </div>
-                        </form>
-                    </div>
-            
-                    <!-- ✅ Developer Credit Section -->
-                    <footer class="text-center mt-5 py-4 border-top text-muted">
-                        <p class="mb-0">
-                            Developed by <strong class="text-primary">Shashank Dubey</strong> and <strong class="text-primary">Vineet Kumar</strong><br>
-                            Under the guidance of <strong class="text-primary">Dr. Mamta Arora</strong><br>
-                            For the purpose of <strong class="text-primary">Manav Rachna University</strong>
-                        </p>
-                    </footer>
                 </div>
-            
-                <!-- Bootstrap 5 JS -->
-                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-                <!-- Alpine.js -->
-                <script src="{{ url_for('static', filename='owl.js') }}"></script>
-                <script src="{{ url_for('static', filename='theme.js') }}"></script>
-                <script src="{{ url_for('static', filename='upload.js') }}"></script>
-            </body>
-</html>
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="fs-1 mb-3 text-primary">📝</div>
+                            <h5 class="card-title fw-bold">Professional Reports</h5>
+                            <p class="card-text text-muted">Generates Excel reports with charts, summaries, and
+                                conditional formatting</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="fs-1 mb-3 text-primary">⚡</div>
+                            <h5 class="card-title fw-bold">Quick Processing</h5>
+                            <p class="card-text text-muted">Processes hundreds of student records in seconds with error
+                                handling</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- New joyful section for dark mode -->
+        <div class="my-5" id="night-mode-joyful-section">
+            <div class="text-center p-5 rounded joyful-container">
+                <h2 class="display-5 fw-bold">🌙 Sweet Dreams! ✨</h2>
+                <p class="lead">The stars are out, and your reports are
+                    waiting. Enjoy the calm night.</p>
+                <div class="night-joy-animation">
 
+                    <div class="owl-container" onclick="angryStart(event)" role="button" tabindex="0" aria-label="Interact with the owl">
+                        <div class="owl-body-top"></div>
+                        <div class="owl-body-bottom flex-row align-center-center wrap">
+                            <div class="feather-container flex-row align-center-center wrap">
+                                <div class="body-feather"></div>
+                                <div class="body-feather"></div>
+                                <div class="body-feather"></div>
+                                <div class="body-feather"></div>
+                                <div class="body-feather"></div>
+                            </div>
+                        </div>
+                        <div class="owl-eye-outer-border eye-position-left"></div>
+                        <div id="eyeLeft" class="eye-blank-area eye-blank-pos-left">
+                            <div id="pupilLeft" class="pupil">
+                                <div class="shine"></div>
+                            </div>
+                        </div>
+                        <div class="eye-lid-up eye-blank-pos-left"></div>
+                        <div class="eye-lid-down eye-blank-pos-left mt85"></div>
+
+                        <div class="owl-eye-outer-border eye-position-right"></div>
+                        <div id="eyeRight" class="eye-blank-area eye-blank-pos-right">
+                            <div id="pupilRight" class="pupil">
+                                <div class="shine"></div>
+                            </div>
+                        </div>
+                        <div class="eye-lid-up eye-blank-pos-right"></div>
+                        <div class="eye-lid-down eye-blank-pos-right mt85"></div>
+                        <div class="wing-left"></div>
+                        <div class="wing-right"></div>
+                        <div class="peak"></div>
+                        <div class="feet-left flex-row align-center-center">
+                            <div class="finger"></div>
+                            <div class="finger"></div>
+                            <div class="finger"></div>
+                        </div>
+                        <div class="feet-right flex-row align-center-center">
+                            <div class="finger"></div>
+                            <div class="finger"></div>
+                            <div class="finger"></div>
+                        </div>
+                        <div class="ear pos-ear-left"></div>
+                        <div class="ear pos-ear-right"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="my-5 p-4 border rounded shadow-sm">
+            <form action="/upload" method="post" enctype="multipart/form-data">
+                <div class="text-center mb-4">
+                    <h4 class="fw-bold mb-2">🚀 Get Started</h4>
+                    <p class="text-muted">Upload your ERP attendance data file to begin analysis</p>
+                </div>
+
+                <div class="mb-3">
+                    <div class="p-5 border rounded bg-light text-center" id="uploadZone" style="cursor: pointer;"
+                        x-data="{ uploadHover: false }" @mouseenter="uploadHover = true"
+                        @mouseleave="uploadHover = false"
+                        :class="{ 'border-primary': uploadHover, 'border-secondary': !uploadHover }">
+                        <div class="fs-1 text-muted mb-3">📄</div>
+                        <p class="lead text-muted">Drag & drop your file here or <span class="text-primary fw-bold"
+                                style="cursor: pointer;">browse</span></p>
+                        <small class="text-muted">Supports CSV files up to 16MB</small>
+                        <input type="file" id="erp_file" name="erp_file" accept=".csv" required style="display: none;"
+                            aria-label="Upload ERP File">
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 border rounded shadow-sm is-hidden"
+                        id="fileInfo">
+                        <span class="fw-bold" id="fileName"></span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="removeFile">×</button>
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center" id="submitBtn"
+                    disabled>
+                    <span class="me-2">Upload and Continue</span>
+                    <span>→</span>
+                    <div class="spinner-border spinner-border-sm ms-2" role="status" style="display: none;"></div>
+                </button>
+                <div class="progress mt-3 is-hidden" id="progressBarContainer" style="height: 20px;">
+                    <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0"
+                        aria-valuemax="100" id="progressBar"></div>
+                </div>
+            </form>
+        </div>
+
+        <!-- ✅ Developer Credit Section -->
+        <footer class="text-center mt-5 py-4 border-top text-muted">
+            <p class="mb-0">
+                Developed by <strong class="text-primary">Vineet Kumar</strong> and <strong
+                    class="text-primary">Shashank Dubey</strong><br>
+                Under the guidance of <strong class="text-primary">Dr. Mamta Arora</strong><br>
+                For the purpose of <strong class="text-primary">Manav Rachna University</strong>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <!-- Alpine.js -->
+    <script src="{{ url_for('static', filename='owl.js') }}"></script>
+    <script src="{{ url_for('static', filename='theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='upload.js') }}"></script>
+</body>
+
+</html>
