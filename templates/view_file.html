@@ -39,7 +39,7 @@
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <label for="department_name" class="form-label">Department Name</label>
-                        <input type="text" id="department_name" name="department_name" class="form-control" value="{{ metadata.get('department_name', 'DEPT OF COMPUTER SCIENCE & TECHNOLOGY') }}" required>
+                        <input type="text" id="department_name" name="department_name" class="form-control" value="{{ metadata.get('department_name', '') }}" required>
                     </div>
                     <div class="col-md-6">
                         <label for="report_title" class="form-label">Report Title</label>
@@ -57,15 +57,15 @@
                     </div>
                     <div class="col-md-6">
                         <label for="class_name" class="form-label">Class Name</label>
-                        <input type="text" id="class_name" name="class_name_division" class="form-control" value="{{ metadata.get('class_name_division', 'BTech CSE Sem 5') }}" required>
+                        <input type="text" id="class_name" name="class_name_division" class="form-control bg-light" value="{{ metadata.get('class_name_division', '') }}" readonly required>
                     </div>
                     <div class="col-md-6">
                         <label for="division" class="form-label">Division</label>
-                        <input type="text" id="division" name="division" class="form-control" value="{{ metadata.get('division', 'A') }}" required>
+                        <input type="text" id="division" name="division" class="form-control" value="{{ metadata.get('division', '') }}" required>
                     </div>
                     <div class="col-md-6">
                         <label for="date_range" class="form-label">Date Range</label>
-                        <input type="text" id="date_range" name="date_range" class="form-control" value="{{ metadata.get('date_range', '30/07/2024 to 14/11/2024') }}" required>
+                        <input type="text" id="date_range" name="date_range" class="form-control bg-light" value="{{ metadata.get('date_range', '') }}" readonly required>
                     </div>
                     <div class="col-12">
                         <label for="coordinator" class="form-label">Program Coordinator</label>
@@ -73,7 +73,7 @@
                     </div>
                     <div class="col-md-6">
                         <label for="min_attendance" class="form-label">Minimum Attendance Criteria (%)</label>
-                        <input type="number" id="min_attendance" name="min_attendance" class="form-control" value="{{ metadata.get('min_attendance', 75) }}" required>
+                        <input type="number" id="min_attendance" name="min_attendance" class="form-control bg-light" value="{{ metadata.get('min_attendance', 75) }}" readonly required>
                     </div>
                     <div class="col-md-6">
                         <label for="report_color" class="form-label">Report Color</label>

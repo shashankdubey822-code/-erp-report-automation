@@ -41,6 +41,9 @@ uploads/
 *.xls
 *.xlsx
 
+# Database (Keep local)
+subjects.db
+
 # IDEs
 .vscode/
 .idea/
@@ -57,4 +60,5 @@ ehthumbs.db
 Thumbs.db
 
 # Logs
-*.loggemini.md
+*.log
+gemini.md

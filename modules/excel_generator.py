@@ -122,7 +122,15 @@ def create_excel_file(df, subject_details, metadata, chart_image=None, report_co
 
     # Write header row
     for col_index, header in enumerate(headers, start=1):
-        cell = ws.cell(row=start_row, column=col_index, value=header)
+        display_text = header
+        # Add Subject Code in () if it's a subject column
+        clean_name = header.split(" - ")[0]
+        if clean_name in subject_details:
+            code = subject_details[clean_name].get('code')
+            if code:
+                display_text = f"{header}\n({code})"
+
+        cell = ws.cell(row=start_row, column=col_index, value=display_text)
         cell.font = Font(bold=True)
         cell.border = thin_border
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)

@@ -18,6 +18,7 @@ import pandas as pd
 
 from modules.data_processor import create_report_dataframe
 from modules.report_manager import generate_all_reports
+from modules.database import update_mapping
 
 
 
@@ -191,6 +192,29 @@ def upload_file():
         return redirect(url_for('index'))
 
 
+        return False
+
+
+def detect_monitoring_stage(report_title):
+    """
+    Detects the monitoring stage from the report title.
+    """
+    search_text = (report_title or "").lower()
+    
+    if "first" in search_text or "1st" in search_text:
+        return "First Att Monitoring"
+    elif "second" in search_text or "2nd" in search_text:
+        return "Second Att Monitoring"
+    elif "third" in search_text or "3rd" in search_text:
+        return "Third Att Monitoring"
+    elif "low" in search_text or "review" in search_text:
+        return "Low Attendance Review"
+    elif "final" in search_text or "end" in search_text:
+        return "Final Att Monitoring"
+    
+    return "First Att Monitoring" # Default
+
+
 @app.route('/view/<filename>')
 def view_file(filename):
     """Shows the user the options for their uploaded file."""
@@ -202,12 +226,12 @@ def view_file(filename):
         return redirect(url_for('index'))
 
     default_metadata = {
-        'department_name': 'DEPT OF COMPUTER SCIENCE & TECHNOLOGY',
+        'department_name': '',
         'report_title': 'ATTENDANCE MONITORING REPORT',
         'monitoring_stage': 'First Att Monitoring',
-        'class_name_division': 'BTech CSE Sem 5',
-        'division': 'A',
-        'date_range': '30/07/2024 to 14/11/2024',
+        'class_name_division': '',
+        'division': '',
+        'date_range': '',
         'coordinator': '',
         'min_attendance': 75,
         'report_color': '#FFFF00'
@@ -220,6 +244,11 @@ def view_file(filename):
             _, _, extracted_metadata, _ = create_report_dataframe(file_content_bytesio, 75) # Unpack 4, discard 2
             # Merge default metadata with extracted metadata
             default_metadata.update(extracted_metadata)
+            
+            # Auto-detect monitoring stage
+            detected_stage = detect_monitoring_stage(default_metadata.get('report_title'))
+            default_metadata['monitoring_stage'] = detected_stage
+            
     except Exception as e:
         logger.error("Failed to pre-parse file %s: %s", filename, e, exc_info=True)
         flash("Could not read metadata from file. Please check the file format or fill in the details manually.")
@@ -359,7 +388,6 @@ def download_file(filename):
         logger.error("Unexpected error during Excel generation for %s: %s", filename, e, exc_info=True)
         flash(f"An unexpected error occurred while generating the report: {str(e)}")
         return redirect(url_for('view_file', filename=filename, original_filename=metadata.get('original_filename', filename)))
-
 
 
 if __name__ == "__main__":

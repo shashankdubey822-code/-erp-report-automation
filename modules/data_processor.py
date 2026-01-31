@@ -2,14 +2,69 @@ import csv
 import logging
 from io import StringIO
 from typing import Dict, Tuple
+from datetime import datetime
 
 import pandas as pd
 
 from .utilities import safe_str
+from .database import get_clean_name, init_db
 
 # Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Ensure DB is initialized on module load or first use
+init_db()
+
+def determine_academic_period(metadata: Dict) -> str:
+    """
+    Determines the academic period string (e.g., '2024 Odd', '2025 Even')
+    based on 'date_range' or 'academic_year'.
+    """
+    date_range = metadata.get('date_range', '')
+    
+    # Try parsing date range first (Format: DD/MM/YYYY to ...)
+    if date_range:
+        try:
+            # Handle "30/07/2024 to 14/11/2024" or similar
+            start_date_str = date_range.split('to')[0].strip()
+            # Try a few common formats
+            for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y'):
+                try:
+                    dt = datetime.strptime(start_date_str, fmt)
+                    year = dt.year
+                    month = dt.month
+                    
+                    if 7 <= month <= 12:
+                        return f"{year} Odd"
+                    else:
+                        return f"{year} Even"
+                except ValueError:
+                    continue
+        except Exception:
+            pass
+            
+    # Fallback to academic_year + semester
+    acad_year = metadata.get('academic_year', '').strip()
+    sem = metadata.get('semester', '').strip()
+    
+    if acad_year:
+        # If acad_year is "2024", check semester
+        if sem:
+            # Check for Roman Numerals or digits
+            is_odd = False
+            if sem.isdigit():
+                is_odd = int(sem) % 2 != 0
+            else:
+                # Roman numeral check (I, III, V, VII are Odd)
+                is_odd = sem.upper() in ['I', 'III', 'V', 'VII']
+            
+            suffix = "Odd" if is_odd else "Even"
+            return f"{acad_year} {suffix}"
+            
+        return acad_year
+
+    return "Unknown"
 
 # -------------------------
 # Dataframe creation
@@ -36,23 +91,37 @@ def create_report_dataframe(erp_file, min_attendance_criteria: int = 75) -> Tupl
     extracted_metadata = {}
     for row in rows[:20]:  # Scan top 20 rows for metadata
         line = ",".join(row)
-        if "Branch:" in line:
-            extracted_metadata['branch'] = line.split("Branch:")[1].split(",")[0].strip()
-        if "Department:" in line:
-            extracted_metadata['department_specialization'] = line.split("Department:")[1].split(",")[0].strip()
-        if "Class Name:" in line:
-            extracted_metadata['class_name_division'] = line.split("Class Name:")[1].split(",")[0].strip()
-        if "Date:" in line:
-            extracted_metadata['date_range'] = line.split("Date:")[1].split(",")[0].strip()
-        if "Program Coordinator:" in line:
-            extracted_metadata['coordinator'] = line.split("Program Coordinator:")[1].split(",")[0].strip()
-        if "Academic Year:" in line:
-            extracted_metadata['academic_year'] = line.split("Academic Year:")[1].split("-")[0].strip()
-        if "Semester:" in line:
-            extracted_metadata['semester'] = line.split("Semester:")[1].split(",")[0].strip()
-        # Look for a line that might be the department name (all caps, single entry in row)
-        if len(row) == 1 and row[0].isupper() and 'department_name' not in extracted_metadata:
-             extracted_metadata['department_name'] = row[0].strip()
+        
+        # Helper to safely extract value after a keyword (handles "Key:", "Key :", etc.)
+        def extract_val(keyword, text):
+            # patterns to try: "Keyword:", "Keyword :"
+            for k in [f"{keyword}:", f"{keyword} :"]:
+                if k in text:
+                    parts = text.split(k)
+                    if len(parts) > 1:
+                        # Take the part after the keyword, split by comma to get just the cell value
+                        return parts[1].split(",")[0].strip()
+            return None
+
+        # Extract fields using the helper
+        if val := extract_val("Branch", line): extracted_metadata['branch'] = val
+        if val := extract_val("Department", line): 
+            # Heuristic: If it's long, it's specialization. If short/Dept, it's name.
+            if "Bachelor" in val or "Master" in val or "Engineering" in val:
+                extracted_metadata['department_specialization'] = val
+            else:
+                extracted_metadata['department_name'] = val
+                
+        if val := extract_val("Class Name", line): extracted_metadata['class_name_division'] = val
+        elif val := extract_val("Class", line): extracted_metadata['class_name_division'] = val # Fallback
+        
+        if val := extract_val("Division", line): extracted_metadata['division'] = val
+        
+        if val := extract_val("Date", line): extracted_metadata['date_range'] = val
+        if val := extract_val("Program Coordinator", line): extracted_metadata['coordinator'] = val
+        if val := extract_val("Academic Year", line): extracted_metadata['academic_year'] = val.split("-")[0].strip()
+        if val := extract_val("Semester", line): extracted_metadata['semester'] = val
+        
         # Look for a line that might be the report title
         if "ATTENDANCE" in line.upper() and 'report_title' not in extracted_metadata:
             extracted_metadata['report_title'] = line.split(',')[0].strip()
@@ -118,13 +187,36 @@ def create_report_dataframe(erp_file, min_attendance_criteria: int = 75) -> Tupl
         else:
             h1[i] = last
 
+    def is_valid_code(val: str) -> bool:
+        """Returns True if val starts with a letter and contains at least one digit."""
+        s = val.strip()
+        if not s: return False
+        # Must start with a letter (e.g., "KCS-101")
+        if not s[0].isalpha():
+            return False
+        # Must contain at least one digit to distinguish from "Core", "Theory"
+        return any(char.isdigit() for char in s)
+
     # Construct final_headers - pair subject + metric info where appropriate
     final_headers = []
     subject_details = {}
     for i, metric in enumerate(h4):
         subj = h1[i]
-        code = h2[i] if i < len(h2) else ""
-        typ = h3[i] if i < len(h3) else ""
+        
+        # Smart Code Detection: Check h2 and h3 for a valid code
+        raw_h2 = h2[i] if i < len(h2) else ""
+        raw_h3 = h3[i] if i < len(h3) else ""
+        
+        code = ""
+        # Prioritize h2, then h3
+        if is_valid_code(raw_h2):
+            code = raw_h2
+        elif is_valid_code(raw_h3):
+            code = raw_h3
+            
+        typ = raw_h3 # Default to h3 for type, or maybe h2 if swapped? 
+        # For now, we trust the existing logic for type but override code if needed.
+
         # Identify special columns
         if subj.strip() in ("Sr.", "Division/Section", "Unique id", "Rollno", "Student Name", "PRN / Enroll"):
             final_headers.append(subj.strip())
@@ -133,10 +225,14 @@ def create_report_dataframe(erp_file, min_attendance_criteria: int = 75) -> Tupl
             final_headers.append(f"Grand Total - {metric}".strip())
         else:
             # typical subject column: "SUBJ - metric"
-            label = f"{subj} - {metric}".strip()
+            # Use database lookup to get formatted name
+            clean_subj = get_clean_name(subj.strip())
+            label = f"{clean_subj} - {metric}".strip()
             final_headers.append(label)
-            if subj not in subject_details:
-                subject_details[subj] = {"code": code, "type": typ}
+            if clean_subj not in subject_details:
+                subject_details[clean_subj] = {"code": code, "type": typ}
+                # Code saving removed as per request
+
 
     # Deduplicate headers to prevent pandas error
     new_headers = []
